@@ -287,12 +287,12 @@ $total_pages = ceil($total_rows / $records_per_page);
                             <div style='padding: 5px; margin-top: 5px; border-radius: 5px; background: #f8f9fa; text-align: left;'>
                                 <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
                                     <tbody>
-<tr>
-    <td style='padding: 3px;'><strong>Dana PIBG</strong></td>
-    <td><input type='number' value='" . $row['dana_pibg'] . "' class='fee-input' data-type='dana_pibg' data-id='" . $row['id'] . "'></td>
-    <td><input type='number' value='" . $row['jum_bayar_dana_pibg'] . "' class='fee-input' data-type='jum_bayar_dana_pibg' data-id='" . $row['id'] . "'></td>
-    <td><input type='number' value='" . ($row['dana_pibg'] - $row['jum_bayar_dana_pibg'] - getTotalPaidBySiblings($row['id']) + $row['jum_bayar_dana_pibg']) . "' readonly></td>
-</tr>
+                                            <tr>
+                                                <td style='padding: 3px;'><strong>Dana PIBG</strong></td>
+                                                <td><input type='number' value='" . $row['dana_pibg'] . "' class='fee-input' data-type='dana_pibg' data-id='" . $row['id'] . "'></td>
+                                                <td><input type='number' value='" . $row['jum_bayar_dana_pibg'] . "' class='fee-input' data-type='jum_bayar_dana_pibg' data-id='" . $row['id'] . "'></td>
+                                                <td><input type='number' value='" . ($row['dana_pibg'] - $row['jum_bayar_dana_pibg'] - getTotalPaidBySiblings($row['id']) + $row['jum_bayar_dana_pibg']) . "' readonly></td>
+                                            </tr>
 
 
                                             <tr>
