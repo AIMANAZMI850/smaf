@@ -128,7 +128,7 @@ if (isset($data['id'])) {
                 if ($bakiFee < 0) {
                     echo json_encode([
                         'status' => 'error',
-                        'message' => 'Jumlah pembayaran melebihi yuran asal untuk fee type: ' . $feeType,
+                        'message' => 'Jumlah pembayaran melebihi yuran asal untuk : ' . $feeType,
                     ]);
                     exit;
                 }
