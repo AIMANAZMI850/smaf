@@ -99,7 +99,8 @@ if (isset($data['id'])) {
         
                 // Skip if the fee has already been fully paid
                 if ($alreadyPaid >= $originalFee) {
-                    continue; // Skip this fee type if fully paid
+                    // If fully paid, reset the amount to 0.00
+                    $amount = 0.00;
                 }
         
                 // Calculate the total amount paid before this transaction
@@ -139,16 +140,15 @@ if (isset($data['id'])) {
                 // Update the `bayaran` table with the correct balance
                 $updateQuery = "UPDATE bayaran SET 
                 $feeType = $totalPaidAfter 
-            WHERE id = $id";
-            
-            if ($bakiFee !== floatval($row["baki_$originalFeeKey"])) { 
-                // Update baki only if a payment was made
-                $updateQuery = "UPDATE bayaran SET 
-                    $feeType = $totalPaidAfter, 
-                    baki_$originalFeeKey = $bakiFee 
                 WHERE id = $id";
-            }
-            
+        
+                if ($bakiFee !== floatval($row["baki_$originalFeeKey"])) { 
+                    // Update baki only if a payment was made
+                    $updateQuery = "UPDATE bayaran SET 
+                        $feeType = $totalPaidAfter, 
+                        baki_$originalFeeKey = $bakiFee 
+                    WHERE id = $id";
+                }
         
                 if (!mysqli_query($conn, $updateQuery)) {
                     error_log("Database error: " . mysqli_error($conn)); // Log the error
