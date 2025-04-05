@@ -242,7 +242,6 @@ $total_pages = ceil($total_rows / $records_per_page);
         <a href="daftar_pelajar.php" class="btn">DAFTAR PELAJAR</a>
         <a href="kemaskini_pelajar.php" class="btn">KEMASKINI PELAJAR</a>
         <a href="bayaran.php" class="btn">BAYARAN</a>
-        <a href="#" class="btn">CETAK SEMUA</a>
         <a href="setting.php" class="btn">SETTING</a>
         <a href="../logout/logout.php" class="btn btn-red">LOG KELUAR</a>
     </div>

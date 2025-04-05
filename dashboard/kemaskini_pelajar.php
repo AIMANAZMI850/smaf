@@ -151,7 +151,7 @@
         <a href="daftar_pelajar.php">DAFTAR PELAJAR</a>
         <a href="kemaskini_pelajar.php">KEMASKINI PELAJAR</a>
         <a href="bayaran.php" class="btn">BAYARAN</a>
-        <a href="#">CETAK SEMUA</a>
+      
         <a href="setting.php">SETTING</a>
         <a href="../logout/logout.php" class="btn-red">LOG KELUAR</a>
     </div>
