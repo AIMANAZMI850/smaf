@@ -57,28 +57,34 @@ if (isset($data['id'])) {
     
         // Special condition: Only check siblings' payments for Dana PIBG
         if (isset($data['jum_bayar_dana_pibg']) && floatval($data['jum_bayar_dana_pibg']) > 0) {
-            $checkQuery = "
-                SELECT COUNT(*) AS count FROM bayaran b
+            // Get the total Dana PIBG paid by all siblings
+            $danaTotalQuery = "
+                SELECT SUM(b.jum_bayar_dana_pibg) AS total_paid, 
+                       SUM(b.dana_pibg) AS total_required
+                FROM bayaran b
                 JOIN daftar_pelajar dp ON b.noKad = dp.noKad
-                WHERE dp.namaWarisPelajar = ? AND b.jum_bayar_dana_pibg > 0
+                WHERE dp.namaWarisPelajar = ?
             ";
-            $checkStmt = $conn->prepare($checkQuery);
-            if (!$checkStmt) {
-                error_log("Database error: " . $conn->error); // Log the error
+            $danaStmt = $conn->prepare($danaTotalQuery);
+            if (!$danaStmt) {
+                error_log("Database error: " . $conn->error);
                 echo json_encode(['status' => 'error', 'message' => 'Database error occurred.']);
                 exit;
             }
-            $checkStmt->bind_param("s", $namaWarisPelajar);
-            $checkStmt->execute();
-            $checkResult = $checkStmt->get_result();
-            $checkRow = $checkResult->fetch_assoc();
-    
-            // If a sibling has already paid, prevent further payments
-            if ($checkRow['count'] > 0) {
-                echo json_encode(["status" => "error", "message" => "Dana PIBG sudah dibayar oleh salah seorang adik-beradik."]);
+            $danaStmt->bind_param("s", $namaWarisPelajar);
+            $danaStmt->execute();
+            $danaResult = $danaStmt->get_result();
+            $danaRow = $danaResult->fetch_assoc();
+        
+            $totalPaid = floatval($danaRow['total_paid'] ?? 0);
+            $totalRequired = floatval($danaRow['total_required'] ?? 0);
+        
+            if ($totalPaid >= $totalRequired) {
+                echo json_encode(["status" => "error", "message" => "Dana PIBG sudah dibayar sepenuhnya oleh adik-beradik."]);
                 exit;
             }
         }
+        
 
         foreach ($data as $key => $value) {
             if (strpos($key, 'jum_bayar_') === 0) {
