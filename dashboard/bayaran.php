@@ -93,7 +93,7 @@ $total_pages = ceil($total_rows / $records_per_page);
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color:rgb(215, 237, 247);
             margin: 0;
             padding: 20px;
             text-align: center;

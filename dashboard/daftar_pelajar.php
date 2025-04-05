@@ -72,14 +72,20 @@ $conn->close();
         }
 
         .form-group input,
-        .form-group select {
-            flex: 2; /* Makes input and select take equal space */
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
-            outline: none;
-        }
+.form-group select,
+.form-group textarea {
+    flex: 2;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    outline: none;
+}
+input[type="text"] {
+    text-transform: uppercase;
+}
+
+
         label {
             font-weight: bold;
             display: block;
@@ -99,6 +105,10 @@ $conn->close();
             border-color: #007bff;
             box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.3);
         }
+        .uppercase {
+    text-transform: uppercase;
+}
+
         .radio-group {
             display: flex;
             align-items: center;
@@ -190,23 +200,29 @@ $conn->close();
         <label for="tahunPelajar">Tahun Pelajar:</label>
         <select name="tahunPelajar" id="tahunPelajar">
             <option value="2025">2025</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
         </select>
     </div>
     <div class="form-group">
         <label for="noKad">No. Kad Pengenalan:</label>
-        <input type="text" name="noKad" id="noKad" placeholder="Masukkan No. Kad Pengenalan" required>
+        <input type="text" name="noKad" id="noKad" 
+       placeholder="Masukkan No. Kad Pengenalan" 
+       required 
+       maxlength="12" 
+       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+
     </div>
 
     <div class="form-group">
         <label for="namaPelajar">Nama Pelajar:</label>
-        <input type="text" name="namaPelajar" id="namaPelajar" placeholder="Masukkan Nama Pelajar" required>
+        <input type="text" name="namaPelajar" id="namaPelajar" class="uppercase" placeholder="Masukkan Nama Pelajar" required>
+
     </div>
 
     <div class="form-group">
         <label for="alamat">Alamat:</label>
-        <textarea name="alamat" id="alamat" placeholder="Masukkan Alamat" rows="2" required></textarea>
+        <textarea name="alamat" id="alamat" class="uppercase" placeholder="Masukkan Alamat" rows="2" required></textarea>
     </div>
 
     <div class="form-group">
@@ -216,7 +232,11 @@ $conn->close();
 
     <div class="form-group">
         <label for="tingkatan">Tingkatan:</label>
-        <input type="text" name="tingkatan" id="tingkatan" placeholder="Masukkan Tingkatan" required oninput="setFee()">
+        <input type="text" name="tingkatan" id="tingkatan" 
+       placeholder="Masukkan Tingkatan" 
+       required 
+       oninput="this.value = this.value.replace(/[^0-9]/g, ''); setFee();">
+
     </div>
 
     <div class="form-group">
