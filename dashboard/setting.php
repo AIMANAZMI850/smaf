@@ -186,12 +186,11 @@
         <div class="sidebar" id="sidebar">
             <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
             <img src="../images/logo.jpg" id="sidebar-logo" class="sidebar-logo" alt="Logo">
-            <a href="dashboard.php" class="btn">DASHBOARD</a>
+           
             <a href="daftar_pelajar.php" class="btn">DAFTAR PELAJAR</a>
             <a href="kemaskini_pelajar.php" class="btn">KEMASKINI PELAJAR</a>
             <a href="bayaran.php" class="btn">BAYARAN</a>
-            <a href="#" class="btn">CETAK RESIT TERKINI</a>
-            <a href="#" class="btn">CETAK SEMUA</a>
+           
             <a href="setting.php" class="btn">SETTING</a>
             <a href="../logout/logout.php" class="btn btn-red">LOG KELUAR</a>
         </div>
