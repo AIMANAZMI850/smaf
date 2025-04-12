@@ -9,6 +9,11 @@ if (!isset($_SESSION['kata_nama'])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bahagian Akaun Perbelanjaan PIBG</title>
@@ -171,14 +176,7 @@ if (!isset($_SESSION['kata_nama'])) {
         margin-bottom: 15px;
     }
 }
-
-
-
-
-
-
 }
-
     </style>
 </head>
 <body>
@@ -190,7 +188,8 @@ if (!isset($_SESSION['kata_nama'])) {
 
     <nav class="menu">
         <button class="btn" onclick="printTable()"><img src="../images/print.jpg" alt="Print"> Cetak</button>
-        <button class="btn"><img src="../images/excel.png" alt="Report"> Laporan</button>
+        <button class="btn" onclick="exportToExcel()"><img src="../images/excel.png" alt="Report"> Laporan</button>
+
         <button class="btn" onclick="openTransaksiWindow()"><img src="../images/transaction.png" alt="Transaction"> Transaksi</button>
         <button class="btn" onclick="openAkaunWindow()"><img src="../images/account.webp" alt="Account"> Akaun</button>
         <button class="btn" onclick="openPembayaranWindow()"> <img src="../images/bayaran.png" alt="Bayaran">Bayaran</button>
@@ -226,7 +225,7 @@ if (!isset($_SESSION['kata_nama'])) {
     <span>rekod setiap halaman</span>
 
 
-        <table>
+        <table id="transaction-table">
             <thead>
                 <tr>
                     <th>Tarikh</th>
@@ -248,6 +247,196 @@ if (!isset($_SESSION['kata_nama'])) {
       let currentPage = 1;
     const recordsPerPage = 20;
     let transactionsData = [];
+
+    async function exportToExcel() {
+    const ExcelJS = window.ExcelJS; // Assuming ExcelJS is loaded in your project
+
+    const workbook = new ExcelJS.Workbook();
+    const now = new Date().toLocaleDateString("ms-MY");
+
+    const summarySheet = workbook.addWorksheet("SUMMARY");
+
+// Set column widths for a nicer layout
+summarySheet.columns = [
+    { width: 20 },    // Column A (empty or numbering, if needed)
+    { width: 30 },   // Column B - PERKARA
+    { width: 15 },   // Column C - B/F 2023
+    { width: 15 },   // Column D - TERIMA
+    { width: 15 },   // Column E - JUMLAH
+    { width: 15 },   // Column F - BELANJA
+    { width: 15 }    // Column G - BAKI
+];
+
+// Add title and date
+summarySheet.addRow([]);
+summarySheet.addRow(["", "SUMMARY 2025"]);
+summarySheet.addRow(["", `TARIKH DI KELUARKAN ${now}`]);
+summarySheet.addRow([]);
+
+// Header row
+const sumHeader = summarySheet.addRow([
+    "", "PERKARA", "B/F 2025", "TERIMA", "JUMLAH", "BELANJA", "BAKI"
+]);
+
+// Add categories
+const categories = [
+    "DANA PIBG",
+    "PEMBANGUNAN (TUISYEN)",
+    "MASAK",
+    "MAJALAH",
+    "HAC",
+    "KERTAS PEPERIKSAAN",
+    "BAS",
+    "DOBI",
+    "BANK (CAJ & HIBAH)",
+    "LAIN-LAIN"
+];
+categories.forEach(name => summarySheet.addRow(["", name]));
+
+// Add final "JUMLAH" row
+const totalRow = summarySheet.addRow(["", "JUMLAH RM"]);
+totalRow.getCell(2).font = { bold: true };
+
+// Define row range
+const firstTableRow = sumHeader.number;
+const lastTableRow = totalRow.number;
+
+// Apply border, alignment, and color formatting
+for (let rowNum = firstTableRow; rowNum <= lastTableRow; rowNum++) {
+    const row = summarySheet.getRow(rowNum);
+    for (let colNum = 2; colNum <= 7; colNum++) {
+        const cell = row.getCell(colNum);
+
+        // Border
+        cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Center for numeric columns, left for PERKARA
+        cell.alignment = {
+            horizontal: colNum === 2 ? 'left' : 'center',
+            vertical: 'middle'
+        };
+
+        // Header row style
+        if (rowNum === sumHeader.number) {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFA500' } // Orange
+            };
+        }
+
+        // "JUMLAH" row style
+        if (rowNum === totalRow.number) {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFA500' } // Light gray
+            };
+        }
+    }
+}
+
+
+
+
+    const createSheetWithHeader = (sheetName, title, headers, openingBalance) => {
+        const sheet = workbook.addWorksheet(sheetName);
+
+        // Style helpers
+        const boldCenter = { bold: true, alignment: { horizontal: 'center' } };
+        const grayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+        const thinBorder = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Title and print date
+        sheet.addRow([]);
+        sheet.addRow(['', '', '', `Tarikh Cetak: ${now}`]);
+        sheet.addRow([]);
+        const headerRow = sheet.addRow(['', ...headers]);
+        const bfrRow = sheet.addRow(['', '', '', `B/F 01.01.2024`, ...openingBalance]);
+
+        // Style header
+        headerRow.eachCell((cell, colNumber) => {
+            if (colNumber > 1) {
+                cell.font = boldCenter;
+                cell.fill = grayFill;
+                cell.border = thinBorder;
+                cell.alignment = { horizontal: 'center' };
+            }
+        });
+
+        // Style B/F row
+        bfrRow.eachCell((cell, colNumber) => {
+            if (colNumber > 1) cell.border = thinBorder;
+        });
+
+        // Adjust column width
+        sheet.columns = [
+            { width: 5 }, { width: 10 }, { width: 15 }, { width: 35 },
+            { width: 15 }, { width: 15 }
+        ];
+
+        return sheet;
+    };
+
+    // Sheets
+    const bankSheet = createSheetWithHeader(
+        "BANK",
+        "BANK",
+        ["NO.", "TARIKH", "PERIHAL", "MASUK", "KELUAR (CEK)"],
+        [10574.55, ""]
+    );
+
+    const pettySheet = createSheetWithHeader(
+        "PETTYCASH",
+        "PETTYCASH",
+        ["NO.", "TARIKH", "PERIHAL", "MASUK", "KELUAR (TUNAI)"],
+        [1689.77, ""]
+    );
+
+    
+
+    const balanceSheet = workbook.addWorksheet("BalanceSheet");
+    balanceSheet.addRow(["", "", "", "PENYATA AKAUN BERAKHIR PADA 31.12.2024"]);
+    balanceSheet.addRow([]);
+    balanceSheet.addRow([]);
+    balanceSheet.addRow(["", "", "", "PENDAPATAN", "", "", "", "PERBELANJAAN"]);
+    balanceSheet.addRow([
+        "", "", "a.", "BAKI DALAM BANK BERAKHIR 31.12.2023", 10574.55,
+        "", "a.", "PENGURUSAN PIBG", 7485.20
+    ]);
+
+    const incomeSheet = workbook.addWorksheet("INCOME");
+    incomeSheet.addRow([]);
+    incomeSheet.addRow([]);
+    incomeSheet.addRow(["", "YURAN PIBG TAHUN 2024 - KUTIP PADA 2024"]);
+    incomeSheet.addRow([]);
+    incomeSheet.addRow(["", "", "", "", "TUNAI", "BANK", "JUMLAH", "", "", "TUNAI", "BANK", "JUMLAH"]);
+    incomeSheet.addRow(["", "", "", "", "", "", "", "YURAN PIBG TAHUN 2025"]);
+
+    // Save the file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Laporan_Kewangan_Format_Tepat.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+
 
     document.addEventListener("DOMContentLoaded", function () {
         const accountSelect = document.getElementById("account-select");
@@ -386,6 +575,7 @@ function printTable() {
     // Remove the class after printing to restore visibility
     document.body.classList.remove("print-mode");
 }
+
 
 
 
