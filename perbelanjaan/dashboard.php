@@ -337,7 +337,7 @@ for (let rowNum = firstTableRow; rowNum <= lastTableRow; rowNum++) {
             cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: 'FFFFA500' } // orange
+                fgColor: { argb: 'FFFFA500' } // Orange
             };
         }
     }
