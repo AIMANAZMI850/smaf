@@ -342,61 +342,145 @@ for (let rowNum = firstTableRow; rowNum <= lastTableRow; rowNum++) {
         }
     }
 }
+summarySheet.addRow([]); // spacing row
 
+summarySheet.addRow(["", "", "", "", "", "Dalam Tangan", ""]);
+summarySheet.addRow(["", "", "", "", "", "Dalam Bank", ""]);
 
+// Add JUMLAH RM row and store the row in a variable
+const jumlahRow = summarySheet.addRow(["", "", "", "", "", "JUMLAH RM", ""]);
 
+// Style the "JUMLAH RM" cell (6th column)
+jumlahRow.getCell(6).font = { bold: true };
+jumlahRow.getCell(6).fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFFFA500' } // Orange
+};
+jumlahRow.getCell(6).alignment = { horizontal: 'center' };
+jumlahRow.getCell(6).border = {
+  top: { style: 'thin' },
+  left: { style: 'thin' },
+  bottom: { style: 'thin' },
+  right: { style: 'thin' }
+};
 
-    const createSheetWithHeader = (sheetName, title, headers, openingBalance) => {
-        const sheet = workbook.addWorksheet(sheetName);
+summarySheet.addRow([]); // another spacing row
 
-        // Style helpers
-        const boldCenter = { bold: true, alignment: { horizontal: 'center' } };
-        const grayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-        const thinBorder = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-        };
+// Add date row
+summarySheet.addRow(["", `TARIKH : ${now}`]);
 
-        // Title and print date
-        sheet.addRow([]);
-        sheet.addRow(['', '', '', `Tarikh Cetak: ${now}`]);
-        sheet.addRow([]);
-        const headerRow = sheet.addRow(['', ...headers]);
-        const bfrRow = sheet.addRow(['', '', '', `B/F 01.01.2024`, ...openingBalance]);
+const createSheetWithHeader = (sheetName, title, headers, openingBalance) => {
+    const sheet = workbook.addWorksheet(sheetName);
 
-        // Style header
-        headerRow.eachCell((cell, colNumber) => {
-            if (colNumber > 1) {
-                cell.font = boldCenter;
-                cell.fill = grayFill;
-                cell.border = thinBorder;
-                cell.alignment = { horizontal: 'center' };
-            }
-        });
+// Style helpers
+const boldCenter = { bold: true, alignment: { horizontal: 'center' } };
+const grayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+const orangeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
+const thinBorder = {
+    top: { style: 'thin' },
+    left: { style: 'thin' },
+    bottom: { style: 'thin' },
+    right: { style: 'thin' }
+};
 
-        // Style B/F row
-        bfrRow.eachCell((cell, colNumber) => {
-            if (colNumber > 1) cell.border = thinBorder;
-        });
+// Title and print date
+sheet.addRow([]);
+sheet.addRow(['', '', '', `Tarikh Cetak: ${now}`]);
+sheet.addRow([]);
+const headerRow = sheet.addRow(['', ...headers]);
+const bfrRow = sheet.addRow(['', '', '', `B/F 01.01.2024`, ...openingBalance]);
 
-        // Adjust column width
-        sheet.columns = [
-            { width: 5 }, { width: 10 }, { width: 15 }, { width: 35 },
-            { width: 15 }, { width: 15 }
-        ];
+// Style header
+headerRow.eachCell((cell, colNumber) => {
+    if (colNumber > 1) {
+        cell.font = boldCenter;
+        cell.fill = grayFill;
+        cell.border = thinBorder;
+        cell.alignment = { horizontal: 'center' };
+    }
+});
 
-        return sheet;
-    };
+// Style B/F row
+bfrRow.eachCell((cell, colNumber) => {
+    if (colNumber > 1) cell.border = thinBorder;
+});
 
-    // Sheets
-    const bankSheet = createSheetWithHeader(
-        "BANK",
-        "BANK",
-        ["NO.", "TARIKH", "PERIHAL", "MASUK", "KELUAR (CEK)"],
-        [10574.55, ""]
-    );
+// Add PERIHAL items with borders
+const perihalItems = [
+    "Dana PIBG", "Pembangunan", "Massak", "Majalah",
+    "HAC", "Kertas Peperiksaan", "Bas", "Dobi",
+    "Bank (Caj & Hibah)", "Lain-lain"
+];
+
+perihalItems.forEach((item, index) => {
+    const row = sheet.addRow(['', index + 1, '', item, '', '']);
+    row.eachCell((cell, colNumber) => {
+        if (colNumber > 1) cell.border = thinBorder;
+    });
+});
+
+// Sub total (A) row
+const subTotalARow = sheet.addRow(['', '', '', '# Sub total (A) RM:', '', '']);
+subTotalARow.eachCell((cell, colNumber) => {
+    if (colNumber > 3) {
+        cell.font = { bold: true };
+        cell.fill = orangeFill;
+        cell.border = thinBorder;
+        cell.alignment = { horizontal: 'center' };
+    }
+});
+
+// 10 blank rows with full borders
+for (let i = 0; i < 10; i++) {
+    const row = sheet.addRow(['', '', '', '', '', '']);
+    row.eachCell((cell, colNumber) => {
+        if (colNumber > 1) cell.border = thinBorder;
+    });
+}
+
+// Sub total (B) row
+const subTotalBRow = sheet.addRow(['', '', '', '# Sub total (B) RM:', '', '']);
+subTotalBRow.eachCell((cell, colNumber) => {
+    if (colNumber > 3) {
+        cell.font = { bold: true };
+        cell.fill = orangeFill;
+        cell.border = thinBorder;
+        cell.alignment = { horizontal: 'center' };
+    }
+});
+
+// BAKI SEBENAR RM row
+const bakiRow = sheet.addRow(['', '', '', 'BAKI SEBENAR RM:', '', '']);
+bakiRow.eachCell((cell, colNumber) => {
+    if (colNumber > 3) {
+        cell.font = { bold: true };
+        cell.fill = orangeFill;
+        cell.border = thinBorder;
+        cell.alignment = { horizontal: 'center' };
+    }
+});
+
+// Adjust column width
+sheet.columns = [
+    { width: 3 },   // column A
+    { width: 10 },  // column B
+    { width: 15 },  // column C
+    { width: 35 },  // column D (PERIHAL)
+    { width: 15 },  // column E (MASUK)
+    { width: 15 }   // column F (KELUAR)
+];
+
+return sheet;
+};
+
+const bankSheet = createSheetWithHeader(
+    "BANK",
+    "BANK",
+    ["NO.", "TARIKH", "PERIHAL", "MASUK", "KELUAR (CEK)"],
+    [10574.55, ""]
+);
+
 
     const pettySheet = createSheetWithHeader(
         "PETTYCASH",
