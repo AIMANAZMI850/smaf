@@ -592,7 +592,7 @@ balanceSheet.addRow([]);
 balanceSheet.addRow([
     "", "",
     "", 
-    "Adalah diakui bahawa kami telah menyemak akaun PIBG SMAF bermula dari 01 Januari hingga 31 Disember", "", "", 
+    "Adalah diakui bahawa kami telah menyemak akaun PIBG SMAF bermula dari 01 Januari hingga 31 Disember.", "", "", 
     ""
 ]);
 
