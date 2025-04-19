@@ -255,6 +255,15 @@ if (!isset($_SESSION['kata_nama'])) {
     const now = new Date().toLocaleDateString("ms-MY");
 
     const summarySheet = workbook.addWorksheet("SUMMARY");
+    summarySheet.pageSetup = {
+  paperSize: 9,
+  orientation: 'landscape',
+  fitToPage: true,
+  fitToWidth: 1,
+  fitToHeight: 0,
+  horizontalCentered: true
+};
+
 
 // Set column widths for a nicer layout
 summarySheet.columns = [
@@ -480,6 +489,14 @@ const bankSheet = createSheetWithHeader(
     ["NO.", "TARIKH", "PERIHAL", "MASUK", "KELUAR (CEK)"],
     [10574.55, ""]
 );
+bankSheet.pageSetup = {
+  paperSize: 9,
+  orientation: 'landscape',
+  fitToPage: true,
+  fitToWidth: 1,
+  fitToHeight: 0,
+  horizontalCentered: true
+};
 
 
     const pettySheet = createSheetWithHeader(
@@ -489,19 +506,119 @@ const bankSheet = createSheetWithHeader(
         [1689.77, ""]
     );
 
+    pettySheet.pageSetup = {
+  paperSize: 9,
+  orientation: 'landscape',
+  fitToPage: true,
+  fitToWidth: 1,
+  fitToHeight: 0,
+  horizontalCentered: true
+};
+
     
 
     const balanceSheet = workbook.addWorksheet("BalanceSheet");
-    balanceSheet.addRow(["", "", "", "PENYATA AKAUN BERAKHIR PADA 31.12.2024"]);
-    balanceSheet.addRow([]);
-    balanceSheet.addRow([]);
-    balanceSheet.addRow(["", "", "", "PENDAPATAN", "", "", "", "PERBELANJAAN"]);
-    balanceSheet.addRow([
-        "", "", "a.", "BAKI DALAM BANK BERAKHIR 31.12.2023", 10574.55,
-        "", "a.", "PENGURUSAN PIBG", 7485.20
-    ]);
+    balanceSheet.pageSetup = {
+  paperSize: 9,
+  orientation: 'landscape',
+  fitToPage: true,
+  fitToWidth: 1,
+  fitToHeight: 0,
+  horizontalCentered: true
+};
+
+// Title
+balanceSheet.addRow(["", "", "", "PENYATA AKAUN BERAKHIR PADA 31.12.2024"]);
+balanceSheet.addRow([]);
+balanceSheet.addRow([]);
+
+// Header
+balanceSheet.addRow(["", "", "", "PENDAPATAN", "", "", "", "PERBELANJAAN"]);
+
+// Data rows (PENDAPATAN vs PERBELANJAAN)
+balanceSheet.addRow([
+    "", "", "a.", "BAKI DALAM BANK BERAKHIR 31.12.2023", 10574.55,
+    "", "a.", "PENGURUSAN PIBG", 7485.20
+]);
+balanceSheet.addRow([
+    "", "", "b.", "TUNAI DALAM TANGAN PADA 31.12.2023", 1689.77,
+    "", "b.", "SISWAH PELAJAR", 20706.00
+]);
+balanceSheet.addRow([
+    "", "", "c.", "KUTIPAN YURAN PADA 1 Jan - 31 Dec 2024", 73437.00,
+    "", "c.", "MASAK", 2653.00
+]);
+balanceSheet.addRow([
+    "", "", "d.", "KUTIPAN DERMA/LAIN2 PADA 2024", 25935.92,
+    "", "d.", "MAJALAH", 7385.00
+]);
+balanceSheet.addRow([
+    "", "", "e.", "KUTIPAN YURAN 2025 (PADA DECEMBER 2024)", 0.00,
+    "", "e.", "HAC", 0.00
+]);
+balanceSheet.addRow([
+    "", "", "f.", "KUTIPAN YURAN ONLINE 1 Jan - 31 Dec 2024", 41915.50,
+    "", "f.", "KERTAS PEPERIKSAAN", 0.00
+]);
+balanceSheet.addRow([
+    "", "", "g.", "KUTIPAN YURAN ONLINE 2025 (PADA DECEMBER 2024)", 0.00,
+    "", "g.", "BAS", 50279.76
+]);
+balanceSheet.addRow([
+    "", "", "h.", "HIBAH", 9.73,
+    "", "h.", "DOBI", 33085.00
+]);
+balanceSheet.addRow([
+    "", "", "", "", "",
+    "", "i.", "BANK(CAJ)", 1163.91
+]);
+balanceSheet.addRow([
+    "", "", "", "", "",
+    "", "j.", "LAIN", 17284.18
+]);
+
+// Sub totals
+balanceSheet.addRow([
+    "", "", "", "JUMLAH RM", 153562.47,
+    "", "", "JUMLAH RM", 153562.47
+]);
+
+balanceSheet.addRow([]);
+balanceSheet.addRow(["", "", "", "Disediakan Oleh", "", "", "Disahkan Oleh"]);
+balanceSheet.addRow(["", "", "", "", "", "", ""]);
+balanceSheet.addRow(["", "", "", "Bendahari PIBG SMAF", "", "", "YDP PIBG SMAF"]);
+balanceSheet.addRow(["", "", "", "Tarikh:", "", "", "Tarikh:"]);
+balanceSheet.addRow([]);
+balanceSheet.addRow([
+    "", "",
+    "", 
+    "Adalah diakui bahawa kami telah menyemak akaun PIBG SMAF bermula dari 01 Januari hingga 31 Disember", "", "", 
+    ""
+]);
+
+// Optional: Set column widths for better formatting
+balanceSheet.columns = [
+    { width: 5 },
+    { width: 5 },
+    { width: 5 },
+    { width: 45 },
+    { width: 15 },
+    { width: 5 },
+    { width: 5 },
+    { width: 45 },
+    { width: 15 }
+];
+
 
     const incomeSheet = workbook.addWorksheet("INCOME");
+    incomeSheet.pageSetup = {
+  paperSize: 9,
+  orientation: 'landscape',
+  fitToPage: true,
+  fitToWidth: 1,
+  fitToHeight: 0,
+  horizontalCentered: true
+};
     incomeSheet.addRow([]);
     incomeSheet.addRow([]);
     incomeSheet.addRow(["", "YURAN PIBG TAHUN 2024 - KUTIP PADA 2024"]);
