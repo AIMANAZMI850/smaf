@@ -243,6 +243,8 @@ if (!isset($_SESSION['kata_nama'])) {
 </div>
 
 
+
+
     <script>
       let currentPage = 1;
     const recordsPerPage = 20;
@@ -379,131 +381,218 @@ summarySheet.addRow([]); // another spacing row
 // Add date row
 summarySheet.addRow(["", `TARIKH : ${now}`]);
 
+// First, create the workbook and BANK sheet as you already have
 const createSheetWithHeader = (sheetName, title, headers, openingBalance) => {
     const sheet = workbook.addWorksheet(sheetName);
 
-// Style helpers
-const boldCenter = { bold: true, alignment: { horizontal: 'center' } };
-const grayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-const orangeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
-const thinBorder = {
-    top: { style: 'thin' },
-    left: { style: 'thin' },
-    bottom: { style: 'thin' },
-    right: { style: 'thin' }
-};
+    const boldCenter = { bold: true, alignment: { horizontal: 'center' } };
+    const grayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+    const orangeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
+    const thinBorder = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+    };
 
-// Title and print date
-sheet.addRow([]);
-sheet.addRow(['', '', '', `Tarikh Cetak: ${now}`]);
-sheet.addRow([]);
-const headerRow = sheet.addRow(['', ...headers]);
-const bfrRow = sheet.addRow(['', '', '', `B/F 01.01.2024`, ...openingBalance]);
+    // Title and print date
+    sheet.addRow([]);
+    sheet.addRow(['', '', '', `Tarikh Cetak: ${now}`]);
+    sheet.addRow([]);
+    const headerRow = sheet.addRow(['', ...headers]);
+    const bfrRow = sheet.addRow(['', '', '', `B/F 01.01.2024`, ...openingBalance]);
 
-// Style header
-headerRow.eachCell((cell, colNumber) => {
-    if (colNumber > 1) {
-        cell.font = boldCenter;
-        cell.fill = grayFill;
-        cell.border = thinBorder;
-        cell.alignment = { horizontal: 'center' };
-    }
-});
+    headerRow.eachCell((cell, colNumber) => {
+        if (colNumber > 1) {
+            cell.font = boldCenter;
+            cell.fill = grayFill;
+            cell.border = thinBorder;
+            cell.alignment = { horizontal: 'center' };
+        }
+    });
 
-// Style B/F row
-bfrRow.eachCell((cell, colNumber) => {
-    if (colNumber > 1) cell.border = thinBorder;
-});
-
-// Add PERIHAL items with borders
-const perihalItems = [
-    "Dana PIBG", "Pembangunan", "Massak", "Majalah",
-    "HAC", "Kertas Peperiksaan", "Bas", "Dobi",
-    "Bank (Caj & Hibah)", "Lain-lain"
-];
-
-perihalItems.forEach((item, index) => {
-    const row = sheet.addRow(['', index + 1, '', item, '', '']);
-    row.eachCell((cell, colNumber) => {
+    bfrRow.eachCell((cell, colNumber) => {
         if (colNumber > 1) cell.border = thinBorder;
     });
-});
 
-// Sub total (A) row
-const subTotalARow = sheet.addRow(['', '', '', '# Sub total (A) RM:', '', '']);
-subTotalARow.eachCell((cell, colNumber) => {
-    if (colNumber > 3) {
-        cell.font = { bold: true };
-        cell.fill = orangeFill;
-        cell.border = thinBorder;
-        cell.alignment = { horizontal: 'center' };
-    }
-});
+    const perihalItems = [
+        "Dana PIBG", "Pembangunan", "Massak", "Majalah",
+        "HAC", "Kertas Peperiksaan", "Bas", "Dobi",
+        "Bank (Caj & Hibah)", "Lain-lain"
+    ];
 
-// 10 blank rows with full borders
-for (let i = 0; i < 10; i++) {
-    const row = sheet.addRow(['', '', '', '', '', '']);
-    row.eachCell((cell, colNumber) => {
-        if (colNumber > 1) cell.border = thinBorder;
+    const dataRows = [];
+
+    perihalItems.forEach((item, index) => {
+        const row = sheet.addRow(['', index + 1, '', item, '', '']);
+        row.eachCell((cell, colNumber) => {
+            if (colNumber > 1) cell.border = thinBorder;
+        });
+        dataRows.push(row); // collect reference to the row for later update
     });
-}
 
-// Sub total (B) row
-const subTotalBRow = sheet.addRow(['', '', '', '# Sub total (B) RM:', '', '']);
-subTotalBRow.eachCell((cell, colNumber) => {
-    if (colNumber > 3) {
-        cell.font = { bold: true };
-        cell.fill = orangeFill;
-        cell.border = thinBorder;
-        cell.alignment = { horizontal: 'center' };
+    const subTotalARow = sheet.addRow(['', '', '', '# Sub total (A) RM:', '', '']);
+    subTotalARow.eachCell((cell, colNumber) => {
+        if (colNumber > 3) {
+            cell.font = { bold: true };
+            cell.fill = orangeFill;
+            cell.border = thinBorder;
+            cell.alignment = { horizontal: 'center' };
+        }
+    });
+
+    for (let i = 0; i < 10; i++) {
+        const row = sheet.addRow(['', '', '', '', '', '']);
+        row.eachCell((cell, colNumber) => {
+            if (colNumber > 1) cell.border = thinBorder;
+        });
     }
-});
 
-// BAKI SEBENAR RM row
-const bakiRow = sheet.addRow(['', '', '', 'BAKI SEBENAR RM:', '', '']);
-bakiRow.eachCell((cell, colNumber) => {
-    if (colNumber > 3) {
-        cell.font = { bold: true };
-        cell.fill = orangeFill;
-        cell.border = thinBorder;
-        cell.alignment = { horizontal: 'center' };
-    }
-});
+    const subTotalBRow = sheet.addRow(['', '', '', '# Sub total (B) RM:', '', '']);
+    subTotalBRow.eachCell((cell, colNumber) => {
+        if (colNumber > 3) {
+            cell.font = { bold: true };
+            cell.fill = orangeFill;
+            cell.border = thinBorder;
+            cell.alignment = { horizontal: 'center' };
+        }
+    });
 
-// Adjust column width
-sheet.columns = [
-    { width: 3 },   // column A
-    { width: 10 },  // column B
-    { width: 15 },  // column C
-    { width: 35 },  // column D (PERIHAL)
-    { width: 15 },  // column E (MASUK)
-    { width: 15 }   // column F (KELUAR)
-];
+    const bakiRow = sheet.addRow(['', '', '', 'BAKI SEBENAR RM:', '', '']);
+    bakiRow.eachCell((cell, colNumber) => {
+        if (colNumber > 3) {
+            cell.font = { bold: true };
+            cell.fill = orangeFill;
+            cell.border = thinBorder;
+            cell.alignment = { horizontal: 'center' };
+        }
+    });
 
-return sheet;
+    sheet.columns = [
+        { width: 3 },
+        { width: 10 },
+        { width: 15 },
+        { width: 35 },
+        { width: 15 },
+        { width: 15 }
+    ];
+
+    return { sheet, dataRows }; // return rows for later update
 };
 
-const bankSheet = createSheetWithHeader(
+const { sheet: bankSheet, dataRows: bankDataRows } = createSheetWithHeader(
     "BANK",
     "BANK",
     ["NO.", "TARIKH", "PERIHAL", "MASUK", "KELUAR (CEK)"],
-    [10574.55, ""]
+    [0, ""]
 );
+
 bankSheet.pageSetup = {
-  paperSize: 9,
-  orientation: 'landscape',
-  fitToPage: true,
-  fitToWidth: 1,
-  fitToHeight: 0,
-  horizontalCentered: true
+    paperSize: 9,
+    orientation: 'landscape',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    horizontalCentered: true
 };
 
+
+// === FETCH DATA FROM PHP AND FILL IN BANK SHEET ===
+fetch('fetchData.php')
+  .then(response => response.json())
+  .then(async data => {
+    // Prepare maps for bank and tunai (petty cash)
+    const paymentMapBank = {};
+    const paymentMapTunai = {};
+
+    data.forEach(d => {
+      if (d.caraBayaran === 'bank') {
+        paymentMapBank["Dana PIBG"] = parseFloat(d.total_dana_pibg) || 0;
+        paymentMapBank["Pembangunan"] = parseFloat(d.total_tuisyen) || 0;
+        paymentMapBank["Massak"] = parseFloat(d.total_massak) || 0;
+        paymentMapBank["Majalah"] = parseFloat(d.total_majalah) || 0;
+        paymentMapBank["HAC"] = parseFloat(d.total_hac) || 0;
+        paymentMapBank["Kertas Peperiksaan"] = parseFloat(d.total_kertas_peperiksaan) || 0;
+        paymentMapBank["Bas"] = parseFloat(d.total_bas) || 0;
+        paymentMapBank["Dobi"] = parseFloat(d.total_dobi) || 0;
+      } else if (d.caraBayaran === 'tunai') {
+        paymentMapTunai["Dana PIBG"] = parseFloat(d.total_dana_pibg) || 0;
+        paymentMapTunai["Pembangunan"] = parseFloat(d.total_tuisyen) || 0;
+        paymentMapTunai["Massak"] = parseFloat(d.total_massak) || 0;
+        paymentMapTunai["Majalah"] = parseFloat(d.total_majalah) || 0;
+        paymentMapTunai["HAC"] = parseFloat(d.total_hac) || 0;
+        paymentMapTunai["Kertas Peperiksaan"] = parseFloat(d.total_kertas_peperiksaan) || 0;
+        paymentMapTunai["Bas"] = parseFloat(d.total_bas) || 0;
+        paymentMapTunai["Dobi"] = parseFloat(d.total_dobi) || 0;
+      }
+    });
+
+    // Get your sheets from the workbook
+    const bankSheet = workbook.getWorksheet('BANK');
+    const pettyCashSheet = workbook.getWorksheet('PETTYCASH');
+
+    // Helper function to update rows on a sheet
+    // Assumes data rows start from row 2 (adjust if needed)
+    function updateSheet(sheet, paymentMap) {
+  let subtotalRow = null;
+  let subtotalSum = 0;
+
+  for (let rowNum = 2; rowNum <= sheet.actualRowCount; rowNum++) {
+    const row = sheet.getRow(rowNum);
+
+    // Skip empty or non-data rows
+    if (!row.hasValues) continue;
+
+    const categoryName = row.getCell(4).value; // "PERIHAL" is in column 4 (D)
+    if (!categoryName || typeof categoryName !== "string") continue;
+
+    // Check if this is the subtotal row
+    if (categoryName.trim() === '# Sub total (A) RM:') {
+      subtotalRow = row;
+      continue; // skip updating subtotal row for payment values
+    }
+
+    // If category exists in paymentMap, update "MASUK" value (column 5 = E)
+    if (paymentMap.hasOwnProperty(categoryName)) {
+      const value = paymentMap[categoryName];
+      row.getCell(5).value = value;
+      row.getCell(5).numFmt = '0.00';
+      subtotalSum += value;
+    }
+
+    row.commit(); // Save changes
+  }
+
+  // After looping, update subtotal row value if it exists
+  if (subtotalRow) {
+    subtotalRow.getCell(5).value = subtotalSum;
+    subtotalRow.getCell(5).numFmt = '0.00';  // RM currency format
+    subtotalRow.commit();
+  }
+}
+
+
+
+    updateSheet(bankSheet, paymentMapBank);
+    updateSheet(pettyCashSheet, paymentMapTunai);
+
+    // Now generate the Excel buffer AFTER updating all cells
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    // Create a Blob and trigger download
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const fileName = `Laporan_Kewangan_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    saveAs(blob, fileName);
+  })
+  .catch(err => {
+    console.error("Error fetching or generating Excel:", err);
+  });
 
     const pettySheet = createSheetWithHeader(
         "PETTYCASH",
         "PETTYCASH",
         ["NO.", "TARIKH", "PERIHAL", "MASUK", "KELUAR (TUNAI)"],
-        [1689.77, ""]
+        [0, ""]
     );
 
     pettySheet.pageSetup = {
@@ -626,15 +715,7 @@ balanceSheet.columns = [
     incomeSheet.addRow(["", "", "", "", "TUNAI", "BANK", "JUMLAH", "", "", "TUNAI", "BANK", "JUMLAH"]);
     incomeSheet.addRow(["", "", "", "", "", "", "", "YURAN PIBG TAHUN 2025"]);
 
-    // Save the file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "Laporan_Kewangan_Format_Tepat.xlsx";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
 }
 
 
