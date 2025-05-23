@@ -507,23 +507,52 @@ fetch('fetchData.php')
 
     data.forEach(d => {
       if (d.caraBayaran === 'bank') {
-        paymentMapBank["Dana PIBG"] = parseFloat(d.total_dana_pibg) || 0;
-        paymentMapBank["Pembangunan"] = parseFloat(d.total_tuisyen) || 0;
-        paymentMapBank["Massak"] = parseFloat(d.total_massak) || 0;
-        paymentMapBank["Majalah"] = parseFloat(d.total_majalah) || 0;
-        paymentMapBank["HAC"] = parseFloat(d.total_hac) || 0;
-        paymentMapBank["Kertas Peperiksaan"] = parseFloat(d.total_kertas_peperiksaan) || 0;
-        paymentMapBank["Bas"] = parseFloat(d.total_bas) || 0;
-        paymentMapBank["Dobi"] = parseFloat(d.total_dobi) || 0;
+        paymentMapBank["dana pibg"] = parseFloat(d.total_dana_pibg) || 0;
+        paymentMapBank["pembangunan"] = parseFloat(d.total_tuisyen) || 0;
+        paymentMapBank["massak"] = parseFloat(d.total_massak) || 0;
+        paymentMapBank["majalah"] = parseFloat(d.total_majalah) || 0;
+        paymentMapBank["hac"] = parseFloat(d.total_hac) || 0;
+        paymentMapBank["kertas peperiksaan"] = parseFloat(d.total_kertas_peperiksaan) || 0;
+        paymentMapBank["bas"] = parseFloat(d.total_bas) || 0;
+        paymentMapBank["dobi"] = parseFloat(d.total_dobi) || 0;
+
       } else if (d.caraBayaran === 'tunai') {
-        paymentMapTunai["Dana PIBG"] = parseFloat(d.total_dana_pibg) || 0;
-        paymentMapTunai["Pembangunan"] = parseFloat(d.total_tuisyen) || 0;
-        paymentMapTunai["Massak"] = parseFloat(d.total_massak) || 0;
-        paymentMapTunai["Majalah"] = parseFloat(d.total_majalah) || 0;
-        paymentMapTunai["HAC"] = parseFloat(d.total_hac) || 0;
-        paymentMapTunai["Kertas Peperiksaan"] = parseFloat(d.total_kertas_peperiksaan) || 0;
-        paymentMapTunai["Bas"] = parseFloat(d.total_bas) || 0;
-        paymentMapTunai["Dobi"] = parseFloat(d.total_dobi) || 0;
+       paymentMapTunai["dana pibg"] = parseFloat(d.total_dana_pibg) || 0;
+        paymentMapTunai["pembangunan"] = parseFloat(d.total_tuisyen) || 0;
+        paymentMapTunai["massak"] = parseFloat(d.total_massak) || 0;
+        paymentMapTunai["majalah"] = parseFloat(d.total_majalah) || 0;
+        paymentMapTunai["hac"] = parseFloat(d.total_hac) || 0;
+        paymentMapTunai["kertas peperiksaan"] = parseFloat(d.total_kertas_peperiksaan) || 0;
+        paymentMapTunai["bas"] = parseFloat(d.total_bas) || 0;
+        paymentMapTunai["dobi"] = parseFloat(d.total_dobi) || 0;
+
+      }
+    });
+
+    // Build keluarMap here...
+     const perihalItems = [
+        "Dana PIBG", "Pembangunan", "Massak", "Majalah",
+        "HAC", "Kertas Peperiksaan", "Bas", "Dobi",
+        "Bank (Caj & Hibah)", "Lain-lain"
+    ];
+
+    const pembayaranTransaksi = JSON.parse(localStorage.getItem('pembayaran_transaksi')) || [];
+
+    const keluarMap = { bank: {}, tunai: {} };
+    perihalItems.forEach(p => {
+      keluarMap.bank[p.toLowerCase()] = 0;
+      keluarMap.tunai[p.toLowerCase()] = 0;
+    });
+
+    pembayaranTransaksi.forEach(tx => {
+      const perihal = tx.akaunPenerima?.trim().toLowerCase();
+      const jumlah = parseFloat(tx.jumlah) || 0;
+      if (!perihalItems.map(p => p.toLowerCase()).includes(perihal)) return;
+
+      if (tx.transferDari === "BANK") {
+        keluarMap.bank[perihal] += jumlah;
+      } else if (tx.transferDari === "TUNAI") {
+        keluarMap.tunai[perihal] += jumlah;
       }
     });
 
@@ -533,48 +562,58 @@ fetch('fetchData.php')
 
     // Helper function to update rows on a sheet
     // Assumes data rows start from row 2 (adjust if needed)
-    function updateSheet(sheet, paymentMap) {
+    function updateSheet(sheet, masukMap, keluarMap) {
   let subtotalRow = null;
-  let subtotalSum = 0;
+  let subtotalMasuk = 0;
+  let subtotalKeluar = 0;
 
   for (let rowNum = 2; rowNum <= sheet.actualRowCount; rowNum++) {
     const row = sheet.getRow(rowNum);
-
-    // Skip empty or non-data rows
     if (!row.hasValues) continue;
 
-    const categoryName = row.getCell(4).value; // "PERIHAL" is in column 4 (D)
+    const categoryName = row.getCell(4).value;
     if (!categoryName || typeof categoryName !== "string") continue;
 
-    // Check if this is the subtotal row
     if (categoryName.trim() === '# Sub total (A) RM:') {
       subtotalRow = row;
-      continue; // skip updating subtotal row for payment values
+      continue;
     }
 
-    // If category exists in paymentMap, update "MASUK" value (column 5 = E)
-    if (paymentMap.hasOwnProperty(categoryName)) {
-      const value = paymentMap[categoryName];
+    const key = categoryName.trim().toLowerCase();
+
+    // Column E (5): MASUK
+    if (masukMap?.hasOwnProperty(key)) {
+      const value = masukMap[key];
       row.getCell(5).value = value;
       row.getCell(5).numFmt = '0.00';
-      subtotalSum += value;
+      subtotalMasuk += value;
     }
 
-    row.commit(); // Save changes
+    // Column F (6): KELUAR
+    if (keluarMap?.hasOwnProperty(key)) {
+      const value = keluarMap[key];
+      row.getCell(6).value = value;
+      row.getCell(6).numFmt = '0.00';
+      subtotalKeluar += value;
+    }
+
+    row.commit();
   }
 
-  // After looping, update subtotal row value if it exists
   if (subtotalRow) {
-    subtotalRow.getCell(5).value = subtotalSum;
-    subtotalRow.getCell(5).numFmt = '0.00';  // RM currency format
+    subtotalRow.getCell(5).value = subtotalMasuk;
+    subtotalRow.getCell(5).numFmt = '0.00';
+    subtotalRow.getCell(6).value = subtotalKeluar;
+    subtotalRow.getCell(6).numFmt = '0.00';
     subtotalRow.commit();
   }
 }
 
 
 
-    updateSheet(bankSheet, paymentMapBank);
-    updateSheet(pettyCashSheet, paymentMapTunai);
+updateSheet(bankSheet, paymentMapBank, keluarMap.bank);
+updateSheet(pettyCashSheet, paymentMapTunai, keluarMap.tunai);
+
 
     // Now generate the Excel buffer AFTER updating all cells
     const buffer = await workbook.xlsx.writeBuffer();
