@@ -530,13 +530,15 @@ fetch('fetchData.php')
     });
 
     // Build keluarMap here...
-     const perihalItems = [
-        "Dana PIBG", "Pembangunan", "Massak", "Majalah",
-        "HAC", "Kertas Peperiksaan", "Bas", "Dobi",
-        "Bank (Caj & Hibah)", "Lain-lain"
-    ];
+    const perihalItems = [
+    "Dana PIBG", "Pembangunan", "Massak", "Majalah",
+    "HAC", "Kertas Peperiksaan", "Bas", "Dobi",
+    "Bank (Caj & Hibah)", "Lain-lain"
+    ].map(p => p.toLowerCase().replace(/\s+/g, ' '));
 
-    const pembayaranTransaksi = JSON.parse(localStorage.getItem('pembayaran_transaksi')) || [];
+    const raw = JSON.parse(localStorage.getItem('pembayaran_transaksi')) || {};
+    const pembayaranTransaksi = Object.values(raw).flat();
+    console.log(pembayaranTransaksi);
 
     const keluarMap = { bank: {}, tunai: {} };
     perihalItems.forEach(p => {
@@ -545,16 +547,28 @@ fetch('fetchData.php')
     });
 
     pembayaranTransaksi.forEach(tx => {
-      const perihal = tx.akaunPenerima?.trim().toLowerCase();
-      const jumlah = parseFloat(tx.jumlah) || 0;
-      if (!perihalItems.map(p => p.toLowerCase()).includes(perihal)) return;
+    const rawPerihal = tx.transferDari?.trim() || "";
+    const perihal = rawPerihal.toLowerCase().replace(/\s+/g, ' ');
 
-      if (tx.transferDari === "BANK") {
+    const jumlah = parseFloat(tx.jumlah) || 0;
+
+    // ✅ Only skip if perihal is NOT in our known categories
+    if (!perihalItems.includes(perihal)) {
+        console.warn("Unmatched perihal (from transferDari):", rawPerihal, "->", perihal);
+        return;
+    }
+
+    const source = tx.caraBayaran?.trim().toUpperCase();
+
+    if (source === "BANK") {
         keluarMap.bank[perihal] += jumlah;
-      } else if (tx.transferDari === "TUNAI") {
+    } else if (source === "TUNAI") {
         keluarMap.tunai[perihal] += jumlah;
-      }
+    } else {
+        console.warn("Unknown caraBayaran:", tx.caraBayaran);
+    }
     });
+
 
     // Get your sheets from the workbook
     const bankSheet = workbook.getWorksheet('BANK');
@@ -563,9 +577,9 @@ fetch('fetchData.php')
     // Helper function to update rows on a sheet
     // Assumes data rows start from row 2 (adjust if needed)
     function updateSheet(sheet, masukMap, keluarMap) {
-  let subtotalRow = null;
-  let subtotalMasuk = 0;
-  let subtotalKeluar = 0;
+    let subtotalRow = null;
+    let subtotalMasuk = 0;
+    let subtotalKeluar = 0;
 
   for (let rowNum = 2; rowNum <= sheet.actualRowCount; rowNum++) {
     const row = sheet.getRow(rowNum);

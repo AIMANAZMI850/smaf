@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pembayaran</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <style>
     /* General Layout */
     body {
@@ -40,6 +42,22 @@
         padding: 12px;
         text-align: left;
     }
+        td button {
+    background-color: white;
+    color: inherit; /* Use icon's color */
+    border: none;
+    border-radius: 4px;
+    padding: 5px 8px;
+    cursor: pointer;
+    margin: 0 3px;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
 
     th {
         background: #3b71ca;
@@ -141,6 +159,8 @@
             text-align: left;
         }
     }
+
+    
 </style>
 </head>
 <body>
@@ -153,21 +173,51 @@
 
         <!-- Table -->
         <table>
-            <thead>
-                <tr>
-                    <th>Tarikh</th>
-                    <th>No Ref</th>
-                    <th>Bayar Kepada</th>
-                    <th>Akaun Pengeluaran</th>
-                   <th>Catatan</th>
-                    <th>Jumlah</th>
-                    <th>Cara Bayaran</th>
-                </tr>
-            </thead>
-            <tbody id="data-table">
-                <!-- Data will be inserted here -->
-            </tbody>
+        <thead>
+            <tr>
+            <th>Tarikh</th>
+            <th>No Ref</th>
+            <th>Bayar Kepada</th>
+            <th>Akaun Pengeluaran</th>
+            <th>Catatan</th>
+            <th>Jumlah</th>
+            <th>Cara Bayaran</th>
+            <th>Tindakan</th>
+            </tr>
+        </thead>
+        <tbody id="data-table"></tbody>
         </table>
+
+       <!-- Modal Overlay -->
+<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+    background:rgba(0, 0, 0, 0.5); z-index:1000;">
+
+  <!-- Modal Box -->
+  <div id="editModal" style="background:#fff; padding:20px 30px; border-radius:8px; width:300px;
+      max-width:90%; margin:100px auto; box-shadow:0 4px 10px rgba(0,0,0,0.2); position:relative;">
+    
+    <h3 style="margin-top:0; text-align:center;">Kemas Kini Rekod</h3>
+
+    <label>Tarikh:<br><input id="editTarikh" type="date" style="width:100%; margin-bottom:10px;"></label><br>
+    <label>No Ref:<br><input id="editRefNo" type="text" style="width:100%; margin-bottom:10px;"></label><br>
+    <label>Bayar Kepada:<br><input id="editBayarKepada" type="text" style="width:100%; margin-bottom:10px;"></label><br>
+    <label>Akaun Pengeluaran:<br><input id="editTransferDari" type="text" style="width:100%; margin-bottom:10px;"></label><br>
+    <label>Catatan:<br><input id="editCatatan" type="text" style="width:100%; margin-bottom:10px;"></label><br>
+    <label>Jumlah:<br><input id="editJumlah" type="number" step="0.01" style="width:100%; margin-bottom:10px;"></label><br>
+    <label>Cara Bayaran:<br>
+      <select id="editCaraBayaran" style="width:100%; margin-bottom:15px;">
+        <option value="Bank">Bank</option>
+        <option value="Tunai">Tunai</option>
+      </select>
+    </label><br>
+
+    <div style="text-align:right;">
+      <button onclick="saveUpdate()" style="background:#28a745; color:white; padding:6px 12px; border:none; border-radius:4px; margin-right:10px;">Simpan</button>
+      <button onclick="closeModal()" style="background:#dc3545; color:white; padding:6px 12px; border:none; border-radius:4px;">Tutup</button>
+    </div>
+  </div>
+</div>
+
 
         <!-- Input Form -->
         <div class="form-container">
@@ -192,7 +242,7 @@
                 <select id="transferDari">
                     <option value="">-- Pilih Akaun --</option>
                     <option value="Dana PIBG">Dana PIBG</option>
-                    <option value="AKADEMIK & SAHSIAH">AKADEMIK & SAHSIAH</option>
+                    <option value="PEMBANGUNAN">PEMBANGUNAN</option>
                     <option value="MASSAK">MASSAK</option>
                     <option value="MAJALAH">MAJALAH</option>
                     <option value="HAC">HAC</option>
@@ -221,14 +271,118 @@
                     <option value="Tunai">Tunai</option>
                 </select>
             </div>
+            
 
             <button class="btn-save" onclick="simpanData('akaun')">Simpan </button>
-            <button class="btn-save" style="background: red; margin-top: 10px;" onclick="clearData()">Clear Data</button>
+            
 
         </div>
     </div>
 
     <script>
+        
+    let editingKey = "";
+    let editingIndex = -1;
+
+    function loadData() {
+    const raw = JSON.parse(localStorage.getItem('pembayaran_transaksi')) || {};
+    return raw;
+    }
+
+    function saveData(data) {
+    localStorage.setItem('pembayaran_transaksi', JSON.stringify(data));
+    }
+
+    function renderTable() {
+    const data = loadData();
+    const tbody = document.getElementById("data-table");
+    tbody.innerHTML = "";
+
+    Object.keys(data).forEach(key => {
+        data[key].forEach((tx, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+        <td>${tx.tarikh}</td>
+        <td>${tx.refNo}</td>
+        <td>${tx.bayarKepada}</td>
+        <td>${tx.transferDari}</td>
+        <td>${tx.catatan}</td>
+        <td>${tx.jumlah}</td>
+        <td>${tx.caraBayaran}</td>
+        <td>
+            <button onclick="editRow('${key}', ${index})" title="Kemas Kini">
+            <i class="fas fa-edit" style="color:#007bff;"></i>
+            </button>
+            <button onclick="deleteRow('${key}', ${index})" title="Padam">
+            <i class="fas fa-trash" style="color:#dc3545;"></i>
+            </button>
+        </td>
+        `;
+
+        tbody.appendChild(row);
+        });
+    });
+    }
+
+    function deleteRow(key, index) {
+    if (!confirm("Padam rekod ini?")) return;
+
+    const data = loadData();
+    data[key].splice(index, 1);
+    if (data[key].length === 0) {
+        delete data[key];
+    }
+    saveData(data);
+    renderTable();
+    }
+
+    function editRow(key, index) {
+    const data = loadData();
+    const tx = data[key][index];
+
+    editingKey = key;
+    editingIndex = index;
+
+    document.getElementById("editTarikh").value = tx.tarikh;
+    document.getElementById("editRefNo").value = tx.refNo;
+    document.getElementById("editBayarKepada").value = tx.bayarKepada;
+    document.getElementById("editTransferDari").value = tx.transferDari;
+    document.getElementById("editCatatan").value = tx.catatan;
+    document.getElementById("editJumlah").value = tx.jumlah;
+    document.getElementById("editCaraBayaran").value = tx.caraBayaran;
+
+    document.getElementById("modalOverlay").style.display = "block";
+    }
+
+   function closeModal() {
+    document.getElementById("modalOverlay").style.display = "none";
+    editingKey = "";
+    editingIndex = -1;
+}
+
+
+    function saveUpdate() {
+    const data = loadData();
+
+    const updatedTx = {
+        tarikh: document.getElementById("editTarikh").value,
+        refNo: document.getElementById("editRefNo").value,
+        bayarKepada: document.getElementById("editBayarKepada").value,
+        transferDari: document.getElementById("editTransferDari").value,
+        catatan: document.getElementById("editCatatan").value,
+        jumlah: document.getElementById("editJumlah").value,
+        caraBayaran: document.getElementById("editCaraBayaran").value
+    };
+
+    data[editingKey][editingIndex] = updatedTx;
+
+    saveData(data);
+    closeModal();
+    renderTable();
+    }
+
+    // Initialize table
+    renderTable();
     let refNoCounter = parseInt(localStorage.getItem("refNoCounter")) || 1000001;
     document.getElementById("refNo").value = refNoCounter;
 
@@ -271,7 +425,7 @@ function loadTable() {
     let pembayaran = JSON.parse(localStorage.getItem("pembayaran_transaksi")) || {};
 
     Object.keys(pembayaran).forEach(account => {
-        pembayaran[account].forEach(item => {
+        pembayaran[account].forEach((item, index) => {
             let newRow = tableBody.insertRow();
             newRow.innerHTML = `
                 <td>${item.tarikh}</td>
@@ -281,10 +435,19 @@ function loadTable() {
                 <td>${item.catatan}</td>
                 <td>${item.jumlah}</td>
                 <td>${item.caraBayaran}</td>
+                <td>
+                    <button onclick="editRow('${account}', ${index})" title="Kemas Kini">
+                        <i class="fas fa-edit" style="color:#07bff0;"></i>
+                    </button>
+                    <button onclick="deleteRow('${account}', ${index})" title="Padam">
+                        <i class="fas fa-trash" style="color:#dc3545;"></i>
+                    </button>
+                </td>
             `;
         });
     });
 }
+
 
 window.onload = function() {
     loadTable();
