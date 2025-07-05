@@ -54,12 +54,15 @@ $row = $result->fetch_assoc();
         }
         input, select {
             width: 100%;
+            max-width: 1200px; /* or 300px, depending on your layout */
             padding: 10px;
-            margin: 5px 0 15px;
+            margin: 5px 0 0px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
         }
+        
+        
         .btn {
             background-color: #007bff;
             color: white;
@@ -75,56 +78,53 @@ $row = $result->fetch_assoc();
             background-color: #0056b3;
         }
         .sidebar {
-            width: 220px;
-            background: #2c3e50;
-            height: 100vh;
-            padding-top: 20px;
-            position: fixed;
-            left: -220px;
-            top: 0;
-            transition: left 0.3s ease-in-out;
-            text-align: center;
-        }
-        .sidebar a {
-            display: block;
-            padding: 15px;
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            transition: 0.3s;
-            background: #34495e;
-            border-radius: 5px;
-            width: 79%;
-            margin: 10px auto;
-            text-align: center;
-        }
-        .sidebar a:hover {
-            background: #1abc9c;
-        }
-        .toggle-btn {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: #2c3e50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            z-index: 1000;
-        }
-        .sidebar.open {
-            left: 0;
-        }
-        .container.shift {
-            margin-left: 230px;
-            width: calc(100% - 230px);
-        }
+    width: 180px;
+    background: #2c3e50;
+    height: 100vh;
+    padding-top: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    text-align: center;
+    z-index: 999;
+}
+
+.sidebar a {
+    display: block;
+    padding: 15px;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    background: #34495e;
+    border-radius: 5px;
+    width: 79%;
+    margin: 10px auto;
+    text-align: center;
+}
+.sidebar a:hover {
+    background: #1abc9c;
+}
+
+.sidebar-logo {
+    width: 100px;
+    margin-bottom: 20px;
+}
+
+.container {
+    margin-left: 180px; /* Create space for sidebar */
+    width: calc(100% - 240px);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
         .sidebar-logo {
             width: 100px;
             margin-bottom: 20px;
             transition: opacity 0.3s ease-in-out;
         }
+        
     </style>
 </head>
 <body>
@@ -132,16 +132,17 @@ $row = $result->fetch_assoc();
 <div class="container">
 <div class="sidebar" id="sidebar">
         <img src="../images/logo.jpg" id="sidebar-logo" class="sidebar-logo" alt="Logo">
-        <a href="dashboard.php">DASHBOARD</a>
+        
         <a href="daftar_pelajar.php">DAFTAR PELAJAR</a>
         <a href="kemaskini_pelajar.php">KEMASKINI PELAJAR</a>
         <a href="bayaran.php" class="btn">BAYARAN</a>
-        <a href="#">CETAK RESIT TERKINI</a>
-        <a href="#">CETAK SEMUA</a>
-        <a href="setting.php">SETTING</a>
         <a href="../logout/logout.php" class="btn-red">LOG KELUAR</a>
     </div>
-    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-footer">
+    &copy; <?= date('Y') ?> SMA Fauzi
+</div>
+
+    
     <h2>Kemaskini Pelajar</h2>
 
     <form id="editStudentForm" action="update_pelajar.php" method="POST">
@@ -181,27 +182,12 @@ $row = $result->fetch_assoc();
         <input type="text" id="jumlahYuran" name="jumlahYuran" value="<?= number_format($row['jumlahYuran'], 2); ?>" required readonly>
 
         <button type="submit" class="btn">Simpan Perubahan</button>
-<a href="kemaskini_pelajar.php" class="btn" style="background-color: #6c757d; margin-top: 10px;">Kembali</a>
 
     </form>
 </div>
 
 <script>
-     function toggleSidebar() {
-            let sidebar = document.getElementById("sidebar");
-            let logo = document.getElementById("sidebar-logo");
-            let container = document.querySelector(".container");
-            
-            if (sidebar.classList.contains("open")) {
-                sidebar.classList.remove("open");
-                container.classList.remove("shift");
-                logo.style.opacity = "0";
-            } else {
-                sidebar.classList.add("open");
-                container.classList.add("shift");
-                logo.style.opacity = "1";
-            }
-        }
+     
 function setFee() {
     let kategori = document.getElementById("kategori").value;
     let tingkatan = document.getElementById("tingkatan").value;

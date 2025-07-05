@@ -128,62 +128,51 @@ input[type="text"] {
         .btn:hover {
             background-color: #0056b3;
         }
-        .sidebar a {
-            display: block;
-            padding: 15px;
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            transition: 0.3s;
-            background: #34495e;
-            border-radius: 5px;
-            width: 90%; /* Makes button fit inside the container */
-            margin: 10px auto; /* Centers the button */
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        .sidebar a:hover {
-            background: #1abc9c;
-        }
-
-        /* Toggle Button */
-        .toggle-btn {
-            position: absolute; /* Inside sidebar */
-            top: 10px;
-            right: -50px; /* Keeps button visible even when sidebar is closed */
-            background: #2c3e50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            z-index: 1000;
-            transition: right 0.3s ease-in-out;
-        }
         .sidebar {
-            width: 220px;
-            background: #2c3e50;
-            height: 100vh;
-            padding-top: 20px; /* Adjusted to make space for toggle button */
-            position: fixed;
-            left: -220px;
-            top: 0;
-            transition: left 0.3s ease-in-out;
-            text-align: center;
-        }
+    width: 220px;
+    background: #2c3e50;
+    height: 100vh;
+    padding-top: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    text-align: center;
+    z-index: 999;
+}
 
-        .sidebar.open {
-             left: 0;
-        }
-        .sidebar.open .toggle-btn {
-            right: 170px; /* Moves button inside when sidebar is open */
-        }
+.sidebar a {
+    display: block;
+    padding: 15px;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    transition: 0.3s;
+    background: #34495e;
+    border-radius: 5px;
+    width: 90%;
+    margin: 10px auto;
+    text-align: center;
+    box-sizing: border-box;
+}
 
-        .container.shift {
-            margin-left: 230px; /* Adjust as needed */
-            width: calc(100% - 230px); /* Prevent content from being covered */
-        }
+.sidebar a:hover {
+    background: #1abc9c;
+}
+
+.sidebar-logo {
+    width: 100px;
+    margin-bottom: 20px;
+}
+
+.container {
+    margin-left: 240px; /* Leave space for sidebar */
+    width: calc(100% - 240px);
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 10px 10px 10px gray;
+}
+
         .sidebar-logo {
             width: 100px; /* Adjust size as needed */
             margin-bottom: 20px;
@@ -243,9 +232,11 @@ input[type="text"] {
         <label for="selectTingkatan">Pilih Kelas:</label>
         <select name="selectTingkatan" id="selectTingkatan" required>
             <option value="">-- Pilih Kelas --</option>
-            <option value="Fatonah">Fatonah</option>
             <option value="Abqori">Abqori</option>
+            <option value="Fatonah">Fatonah</option>
+            <option value="Cemerlang">Cemerlang</option>
             <option value="Gemilang">Gemilang</option>
+            <option value="Imtiyaz">Imtiyaz</option>
         </select>
     </div>
 
@@ -283,42 +274,17 @@ input[type="text"] {
     </div>
 
         <div class="sidebar" id="sidebar">
-        <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+        
         <img src="../images/logo.jpg" id="sidebar-logo" class="sidebar-logo" alt="Logo">
             <a href="daftar_pelajar.php" class="btn">DAFTAR PELAJAR</a>
             <a href="kemaskini_pelajar.php" class="btn">KEMASKINI PELAJAR</a>
             <a href="bayaran.php" class="btn">BAYARAN</a>
            
-            <a href="setting.php" class="btn">SETTING</a>
             <a href="../logout/logout.php" class="btn btn-red">LOG KELUAR</a>
     </div>
     
 
 <script>
-function toggleSidebar() {
-    let sidebar = document.getElementById("sidebar");
-    let logo = document.getElementById("sidebar-logo");
-    let container = document.querySelector(".container");
-
-    // Toggle the 'open' class to hide or show the sidebar
-    if (sidebar.classList.contains("open")) {
-        sidebar.classList.remove("open");
-        container.classList.remove("shift");
-        logo.style.opacity = "0"; // Hide logo when sidebar is closed
-    } else {
-        sidebar.classList.add("open");
-        container.classList.add("shift");
-        logo.style.opacity = "1"; // Show logo when sidebar is open
-    }
-}
-
-// Ensure sidebar stays visible by default when the page loads
-window.onload = function () {
-    let sidebar = document.getElementById("sidebar");
-    if (!sidebar.classList.contains("open")) {
-        sidebar.classList.add("open");  // Ensure sidebar is open on page load
-    }
-};
 
 function setFee() {
     let kategori = document.getElementById("kategori").value;

@@ -7,14 +7,14 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color:rgb(215, 237, 247);
+            background-color: rgb(215, 237, 247);
             margin: 0;
             padding: 20px;
             text-align: center;
         }
         .container {
-            width: 80%;
-            margin: auto;
+            margin-left: 210px;
+            width: calc(100% - 240px);
             background: white;
             padding: 20px;
             border-radius: 10px;
@@ -36,12 +36,12 @@
             border-collapse: collapse;
             margin-top: 20px;
             background: white;
-            border: 2px solid black; /* Outer border */
+            border: 2px solid black;
         }
         th, td {
             padding: 12px;
             text-align: center;
-            border: 2px solid black; /* Black border for all cells */
+            border: 2px solid black;
         }
         th {
             background-color: #007bff;
@@ -96,10 +96,10 @@
             height: 100vh;
             padding-top: 20px;
             position: fixed;
-            left: -220px;
+            left: 0;
             top: 0;
-            transition: left 0.3s ease-in-out;
             text-align: center;
+            z-index: 999;
         }
         .sidebar a {
             display: block;
@@ -129,13 +129,6 @@
             border-radius: 5px;
             z-index: 1000;
         }
-        .sidebar.open {
-            left: 0;
-        }
-        .container.shift {
-            margin-left: 230px;
-            width: calc(100% - 230px);
-        }
         .sidebar-logo {
             width: 100px;
             margin-bottom: 20px;
@@ -146,18 +139,17 @@
 <body>
 
 <div class="container">
-<div class="sidebar" id="sidebar">
+    <div class="sidebar" id="sidebar">
         <img src="../images/logo.jpg" id="sidebar-logo" class="sidebar-logo" alt="Logo">
         <a href="daftar_pelajar.php">DAFTAR PELAJAR</a>
         <a href="kemaskini_pelajar.php">KEMASKINI PELAJAR</a>
         <a href="bayaran.php" class="btn">BAYARAN</a>
-      
-        <a href="setting.php">SETTING</a>
         <a href="../logout/logout.php" class="btn-red">LOG KELUAR</a>
     </div>
-    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
     <h2>Senarai Pelajar</h2>
-    <input type="text" id="searchStudent" placeholder="Cari No. Kad Pengenalan" onkeyup="filterStudents()">
+    <input type="text" id="searchStudent" placeholder="Cari No. Kad Pengenalan">
+<button onclick="handleSearchClick()">Cari</button>
 
     <table>
         <thead>
@@ -177,26 +169,32 @@
             <?php
             include '../db_connection/db.php';
 
-            // Define how many students per page
-            $studentsPerPage = 50;
-            
-            // Get the current page number
-            $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-            $offset = ($page - 1) * $studentsPerPage;
+            $searchNoKad = isset($_GET['noKad']) ? $_GET['noKad'] : null;
 
-            // Get total number of students
-            $totalStudentsQuery = "SELECT COUNT(*) AS total FROM daftar_pelajar";
-            $totalResult = $conn->query($totalStudentsQuery);
-            $totalStudents = $totalResult->fetch_assoc()['total'];
-            $totalPages = ceil($totalStudents / $studentsPerPage);
+            if ($searchNoKad) {
+                $stmt = $conn->prepare("SELECT * FROM daftar_pelajar WHERE noKad LIKE ?");
+                $searchValue = "%" . $searchNoKad . "%";
+                $stmt->bind_param("s", $searchValue);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $bil = 1;
+            } else {
+                $studentsPerPage = 25;
+                $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+                $offset = ($page - 1) * $studentsPerPage;
 
-            // Fetch students for the current page
-            $sql = "SELECT * FROM daftar_pelajar LIMIT $studentsPerPage OFFSET $offset";
-            $result = $conn->query($sql);
+                $totalStudentsQuery = "SELECT COUNT(*) AS total FROM daftar_pelajar";
+                $totalResult = $conn->query($totalStudentsQuery);
+                $totalStudents = $totalResult->fetch_assoc()['total'];
+                $totalPages = ceil($totalStudents / $studentsPerPage);
 
-            $bil = $offset + 1; // Start numbering from correct index
+                $sql = "SELECT * FROM daftar_pelajar LIMIT $studentsPerPage OFFSET $offset";
+                $result = $conn->query($sql);
+                $bil = $offset + 1;
+            }
+
             while ($row = $result->fetch_assoc()) {
-            ?>
+                ?>
                 <tr>
                     <td><?= $bil++; ?></td>
                     <td><?= $row['tahunPelajar']; ?></td>
@@ -211,61 +209,54 @@
                         <button class="btn delete-btn" onclick="confirmDelete('<?= $row['noKad']; ?>')">Padam</button>
                     </td>
                 </tr>
-            <?php } ?>
+                <?php
+            }
+            ?>
         </tbody>
     </table>
 
-    <!-- Pagination Links -->
-    <div class="pagination">
-        <?php if ($page > 1): ?>
-            <a href="?page=<?= $page - 1; ?>">Sebelumnya</a>
-        <?php endif; ?>
+    <!-- Pagination (Hanya jika tiada carian) -->
+    <?php if (!$searchNoKad && $totalPages > 1): ?>
+        <div class="pagination">
+            <?php if ($page > 1): ?>
+                <a href="?page=<?= $page - 1; ?>">Sebelumnya</a>
+            <?php endif; ?>
 
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?page=<?= $i; ?>" class="<?= ($i == $page) ? 'active' : ''; ?>"><?= $i; ?></a>
-        <?php endfor; ?>
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <a href="?page=<?= $i; ?>" class="<?= ($i == $page) ? 'active' : ''; ?>"><?= $i; ?></a>
+            <?php endfor; ?>
 
-        <?php if ($page < $totalPages): ?>
-            <a href="?page=<?= $page + 1; ?>">Seterusnya</a>
-        <?php endif; ?>
-    </div>
+            <?php if ($page < $totalPages): ?>
+                <a href="?page=<?= $page + 1; ?>">Seterusnya</a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 </div>
 
 <script>
-     function toggleSidebar() {
-            let sidebar = document.getElementById("sidebar");
-            let logo = document.getElementById("sidebar-logo");
-            let container = document.querySelector(".container");
-            
-            if (sidebar.classList.contains("open")) {
-                sidebar.classList.remove("open");
-                container.classList.remove("shift");
-                logo.style.opacity = "0";
-            } else {
-                sidebar.classList.add("open");
-                container.classList.add("shift");
-                logo.style.opacity = "1";
-            }
-        }
-function filterStudents() {
+    function handleSearchClick() {
     let input = document.getElementById("searchStudent").value.toLowerCase();
     let rows = document.querySelectorAll("#studentTable tr");
 
     rows.forEach(row => {
-        let text = row.cells[2].textContent.toLowerCase(); // No. Kad Pengenalan
+        let text = row.cells[2].textContent.toLowerCase(); // assuming column 2 is No. Kad
         row.style.display = text.includes(input) ? "" : "none";
     });
 }
-
-
-function confirmDelete(noKad) {
-    if (confirm("Adakah anda pasti ingin menghapuskan pelajar ini?")) {
-        // Directly call the delete script
-        window.location.href = "hapus_pelajar.php?noKad=" + noKad;
+function handleSearchKey(event) {
+    if (event.key === "Enter") {
+        const ic = document.getElementById("searchStudent").value.trim();
+        if (ic) {
+            window.location.href = "?noKad=" + encodeURIComponent(ic);
+        }
     }
 }
 
-
+function confirmDelete(noKad) {
+    if (confirm("Adakah anda pasti ingin menghapuskan pelajar ini?")) {
+        window.location.href = "hapus_pelajar.php?noKad=" + noKad;
+    }
+}
 </script>
 
 </body>

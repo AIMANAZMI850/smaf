@@ -1,4 +1,6 @@
 <?php
+include '../db_connection/db.php'; // Include your database connection
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
 
 function getTotalPaidBySiblings($studentId) {
     global $conn;
@@ -26,10 +28,10 @@ function getTotalPaidBySiblings($studentId) {
     return 0;
 }
 
-include '../db_connection/db.php'; // Include your database connection
+
 
 // Set number of records per page
-$records_per_page = 50;
+$records_per_page = 20;
 
 // Get the current page number
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -45,33 +47,34 @@ $total_query = "
     SELECT COUNT(*) 
     FROM bayaran b
     JOIN daftar_pelajar dp ON b.nokad = dp.noKad
+    WHERE dp.namaPelajar LIKE '%$search%' 
+       OR dp.namaWarisPelajar LIKE '%$search%' 
+       OR b.noKad LIKE '%$search%'
 ";
+
 
 // Execute the main query
 $query = "
     SELECT 
         b.*, 
         dp.namaWarisPelajar, 
-        b.dana_pibg,
-        b.jum_bayar_dana_pibg,
+        dp.namaPelajar,
+        dp.tingkatan,
+        dp.jumlahYuran,
         (
             SELECT SUM(b2.jum_bayar_dana_pibg)
             FROM bayaran b2
             JOIN daftar_pelajar dp2 ON b2.nokad = dp2.noKad
             WHERE dp2.namaWarisPelajar = dp.namaWarisPelajar
-        ) AS total_paid_by_siblings,
-        (
-            b.dana_pibg - (
-                SELECT SUM(b2.jum_bayar_dana_pibg)
-                FROM bayaran b2
-                JOIN daftar_pelajar dp2 ON b2.nokad = dp2.noKad
-                WHERE dp2.namaWarisPelajar = dp.namaWarisPelajar
-            ) 
-        ) AS baki
+        ) AS total_paid_by_siblings
     FROM bayaran b
     JOIN daftar_pelajar dp ON b.nokad = dp.noKad
+    WHERE dp.namaPelajar LIKE '%$search%' 
+       OR dp.namaWarisPelajar LIKE '%$search%' 
+       OR b.noKad LIKE '%$search%'
     LIMIT $start_from, $records_per_page
 ";
+
 
 // Execute the query to fetch the result
 $result = mysqli_query($conn, $query);
@@ -111,7 +114,7 @@ $total_pages = ceil($total_rows / $records_per_page);
             color: #333;
         }
         input {
-            width: 50%;
+            width: 85%;
             padding: 10px;
             margin-bottom: 20px;
             border: 1px solid #ccc;
@@ -173,26 +176,28 @@ $total_pages = ceil($total_rows / $records_per_page);
         .sidebar a:hover {
             background: #1abc9c;
         }
-        .toggle-btn {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: #2c3e50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            z-index: 1000;
-        }
-        .sidebar.open {
-            left: 0;
-        }
-        .container.shift {
-            margin-left: 230px;
-            width: calc(100% - 230px);
-            transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
-        }
+       .sidebar {
+        width: 185px;
+        background: #2c3e50;
+        height: 100vh;
+        padding-top: 20px;
+        position: fixed;
+        left: 0;
+        top: 0;
+        text-align: center;
+        z-index: 999;
+    }
+
+    .container {
+        margin-left: 200px;
+        width: calc(100% - 240px);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.1);
+    }
+
+        
         .sidebar-logo {
             width: 100px;
             margin-bottom: 20px;
@@ -220,14 +225,14 @@ $total_pages = ceil($total_rows / $records_per_page);
         }
         .payment-options {
             display: none;
-            margin-top: 5px;
+            margin-top: 10px;
             text-align: center;
         }
         .pay-btn {
             background: #007bff;
             color: white;
             border: none;
-            padding: 5px 8px;
+            padding: 10px 10px;
             cursor: pointer;
             border-radius: 3px;
         }
@@ -242,12 +247,22 @@ $total_pages = ceil($total_rows / $records_per_page);
         <a href="daftar_pelajar.php" class="btn">DAFTAR PELAJAR</a>
         <a href="kemaskini_pelajar.php" class="btn">KEMASKINI PELAJAR</a>
         <a href="bayaran.php" class="btn">BAYARAN</a>
-        <a href="setting.php" class="btn">SETTING</a>
+      
         <a href="../logout/logout.php" class="btn btn-red">LOG KELUAR</a>
     </div>
-    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    
         <h2>Senarai Bayaran</h2>
-        <input type="text" id="searchPayment" placeholder="Masukkan nama waris atau nama pelajar" onkeyup="filterPayments()">
+        <form method="get" action="">
+    <input 
+        type="text" 
+        name="search" 
+        placeholder="Masukkan nama waris atau nama pelajar" 
+        value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" 
+        style="width:85%; padding:10px; font-size:16px;"
+    >
+    <button type="submit" style="padding:10px;">Cari</button>
+</form>
+
 
         <table>
             <thead>
@@ -255,7 +270,7 @@ $total_pages = ceil($total_rows / $records_per_page);
                     <th>Bil</th>
                     <th>No. Kad Pengenalan</th>
                     <th>Nama Pelajar</th>
-                    <th>Nama Waris</th>
+                    <th>Tingkatan</th>
                     <th>Jumlah Yuran (RM)</th>
                     <th>Jumlah Bayar (RM)</th>
                     <th>Baki (RM)</th>
@@ -270,7 +285,7 @@ $total_pages = ceil($total_rows / $records_per_page);
                     echo "<td>" . $bil++ . "</td>";
                     echo "<td>" . $row['noKad'] . "</td>";
                     echo "<td>" . $row['namaPelajar'] . "</td>";
-                    echo "<td>" . $row['namaWarisPelajar'] . "</td>";
+                    echo "<td>" . $row['tingkatan'] . "</td>";
                     echo "<td>" . number_format($row['jumlahYuran'], 2) . "</td>";
                     
                     // Calculate jumlahBayar based on the sum of the fees that the parent is willing to pay
@@ -283,7 +298,8 @@ $total_pages = ceil($total_rows / $records_per_page);
                     echo "<td>
                         <details>
                             <summary style='cursor: pointer; font-weight: bold; color: #007bff;'>Lihat Butiran</summary>
-                            <div style='padding: 5px; margin-top: 5px; border-radius: 5px; background: #f8f9fa; text-align: left;'>
+                            <div style='padding: 5px; margin-top: 5px; border-radius: 5px; background: #f8f9fa; text-align: left; max-height: 280px; overflow-y: auto;'>
+
                                 <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
                                     <tbody>
                                             <tr>
@@ -362,21 +378,22 @@ $total_pages = ceil($total_rows / $records_per_page);
         
         <!-- Pagination Links -->
         <div class="pagination">
-            <?php if ($page > 1): ?>
-                <a href="?page=1">First</a>
-                <a href="?page=<?php echo $page - 1; ?>">Prev</a>
-            <?php endif; ?>
+           <?php if ($page > 1): ?>
+    <a href="?page=1&search=<?= urlencode($search) ?>">First</a>
+    <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>">Prev</a>
+<?php endif; ?>
 
-            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?page=<?php echo $i; ?>" class="<?php echo ($i == $page) ? 'active' : ''; ?>">
-                    <?php echo $i; ?>
-                </a>
-            <?php endfor; ?>
+<?php for ($i = 1; $i <= $total_pages; $i++): ?>
+    <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>" class="<?= ($i == $page) ? 'active' : ''; ?>">
+        <?= $i ?>
+    </a>
+<?php endfor; ?>
 
-            <?php if ($page < $total_pages): ?>
-                <a href="?page=<?php echo $page + 1; ?>">Next</a>
-                <a href="?page=<?php echo $total_pages; ?>">Last</a>
-            <?php endif; ?>
+<?php if ($page < $total_pages): ?>
+    <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>">Next</a>
+    <a href="?page=<?= $total_pages ?>&search=<?= urlencode($search) ?>">Last</a>
+<?php endif; ?>
+
         </div>
     </div>
 
@@ -504,21 +521,7 @@ $total_pages = ceil($total_rows / $records_per_page);
         });
     });
 
-    // Sidebar Toggle
-    function toggleSidebar() {
-        let sidebar = document.getElementById("sidebar");
-        let container = document.querySelector(".container");
-
-        if (sidebar && container) {
-            sidebar.classList.toggle("open");
-            container.classList.toggle("shift");
-        }
-    }
-
-    let toggleBtn = document.querySelector(".toggle-btn");
-    if (toggleBtn) {
-        toggleBtn.addEventListener("click", toggleSidebar);
-    }
+   
   document.addEventListener("DOMContentLoaded", function() {
     let searchInput = document.getElementById("searchPayment");
     if (searchInput) {

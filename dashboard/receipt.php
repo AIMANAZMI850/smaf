@@ -23,12 +23,17 @@ if (isset($_GET['id'])) {
 
         // Check if any sibling has already paid for Dana PIBG and fetch their names
         $checkSiblingPaymentQuery = "
-            SELECT dp.namaPelajar FROM bayaran b
-            JOIN daftar_pelajar dp ON b.noKad = dp.noKad
-            WHERE dp.namaWarisPelajar = ? AND b.jum_bayar_dana_pibg > 0
-        ";
-        $checkStmt = $conn->prepare($checkSiblingPaymentQuery);
-        $checkStmt->bind_param("s", $namaWarisPelajar);
+    SELECT dp.namaPelajar 
+    FROM bayaran b
+    JOIN daftar_pelajar dp ON b.noKad = dp.noKad
+    WHERE dp.namaWarisPelajar = ? 
+      AND b.jum_bayar_dana_pibg > 0
+      AND dp.noKad != ?
+";
+$checkStmt = $conn->prepare($checkSiblingPaymentQuery);
+$checkStmt->bind_param("ss", $namaWarisPelajar, $row['noKad']); // second parameter: current student IC
+
+      
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
         
@@ -193,6 +198,12 @@ if (isset($_GET['id'])) {
                 document.addEventListener("DOMContentLoaded", function () {
                     document.getElementById("year").textContent = new Date().getFullYear();
                 });
+                if (result.redirect) {
+    setTimeout(() => {
+        window.location.href = result.redirect;
+    }, 800); // Wait 800ms before redirecting
+}
+
             </script>
         </body>
         </html>
