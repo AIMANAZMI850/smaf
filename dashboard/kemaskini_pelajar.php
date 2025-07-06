@@ -148,8 +148,14 @@
     </div>
 
     <h2>Senarai Pelajar</h2>
-    <input type="text" id="searchStudent" placeholder="Cari No. Kad Pengenalan">
+    
+
+   <input type="text" id="searchStudent" placeholder="Cari No. Kad Pengenalan atau Nama Penuh" onkeypress="handleSearchKey(event)">
+
 <button onclick="handleSearchClick()">Cari</button>
+<button onclick="window.location.href='kemaskini_pelajar.php'">Reset</button>
+
+
 
     <table>
         <thead>
@@ -234,21 +240,74 @@
 </div>
 
 <script>
-    function handleSearchClick() {
-    let input = document.getElementById("searchStudent").value.toLowerCase();
-    let rows = document.querySelectorAll("#studentTable tr");
+function handleSearchClick() {
+    const searchValue = document.getElementById("searchStudent").value.trim();
+    //const tingkatan = document.getElementById("filterTingkatan").value;
+   // const kelas = document.getElementById("filterKelas").value;
 
-    rows.forEach(row => {
-        let text = row.cells[2].textContent.toLowerCase(); // assuming column 2 is No. Kad
-        row.style.display = text.includes(input) ? "" : "none";
-    });
+    if (!searchValue) {
+    alert("Sila masukkan sekurang-kurangnya satu kriteria carian.");
+    return;
 }
+
+
+    const url = new URL('carian_pelajar.php', window.location.href);
+
+
+    // Check if input is IC number (all digits or 12 digits)
+    if (/^\d{6,}$/.test(searchValue)) {
+        url.searchParams.append("noKad", searchValue);
+    } else {
+        url.searchParams.append("namaPelajar", searchValue);
+    }
+
+   // if (tingkatan) url.searchParams.append("tingkatan", tingkatan);
+   // if (kelas) url.searchParams.append("kelas", kelas);
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.getElementById("studentTable");
+            tableBody.innerHTML = "";
+
+            if (data.error) {
+                tableBody.innerHTML = `<tr><td colspan="9" style="color:red;">${data.error}</td></tr>`;
+            } else {
+                let bil = 1;
+                data.forEach(row => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${bil++}</td>
+                        <td>${row.tahunPelajar}</td>
+                        <td>${row.noKad}</td>
+                        <td>${row.namaPelajar}</td>
+                        <td>${row.tingkatan}</td>
+                        <td>${row.selectTingkatan}</td>
+                        <td>${row.kategori}</td>
+                        <td>${parseFloat(row.jumlahYuran).toFixed(2)}</td>
+                        <td>
+                            <a href="edit_pelajar.php?noKad=${row.noKad}" class="btn edit-btn">Kemaskini</a>
+                            <button class="btn delete-btn" onclick="confirmDelete('${row.noKad}')">Padam</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            const pagination = document.querySelector(".pagination");
+            if (pagination) {
+                pagination.style.display = "none";
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+        });
+}
+
+
 function handleSearchKey(event) {
     if (event.key === "Enter") {
-        const ic = document.getElementById("searchStudent").value.trim();
-        if (ic) {
-            window.location.href = "?noKad=" + encodeURIComponent(ic);
-        }
+        handleSearchClick();
     }
 }
 
@@ -258,6 +317,7 @@ function confirmDelete(noKad) {
     }
 }
 </script>
+
 
 </body>
 </html>

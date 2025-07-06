@@ -1,53 +1,59 @@
 <?php
+header('Content-Type: application/json');
 session_start();
 include '../db_connection/db.php';
 
+$query = "SELECT * FROM daftar_pelajar WHERE 1=1"; // Always true condition
+$params = [];
+$types = "";
+
+// Dynamic filters
+if (!empty($_GET['noKad'])) {
+    $query .= " AND noKad LIKE ?";
+    $params[] = "%" . $_GET['noKad'] . "%";
+    $types .= "s";
+}
+
+if (!empty($_GET['namaPelajar'])) {
+    $query .= " AND namaPelajar = ?";
+$params[] = $_GET['namaPelajar'];
+
+    $types .= "s";
+}
+
+if (!empty($_GET['parent_ic'])) {
+    $query .= " AND parent_ic = ?";
+    $params[] = $_GET['parent_ic'];
+    $types .= "s";
+}
+
+$stmt = $conn->prepare($query);
+
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+
 $searchResults = [];
 
-if (!empty($_GET['noKad']) || !empty($_GET['parent_ic']) || !empty($_GET['namaPelajar'])) {
-    if (!empty($_GET['noKad'])) {
-        $searchField = "noKad";
-        $searchValue = "%" . $_GET['noKad'] . "%"; // Allow partial match
-        $query = "SELECT * FROM daftar_pelajar WHERE $searchField LIKE ?";
-    } elseif (!empty($_GET['parent_ic'])) {
-        // If searching by parent IC, find all students with the same parent IC
-        $searchValue = $_GET['parent_ic'];
-        $query = "SELECT * FROM daftar_pelajar WHERE parent_ic = ?";
-    } elseif (!empty($_GET['namaPelajar'])) {
-        $searchField = "namaPelajar";
-        $searchValue = "%" . $_GET['namaPelajar'] . "%"; // Allow partial match
-        $query = "SELECT * FROM daftar_pelajar WHERE $searchField LIKE ?";
+while ($student = $result->fetch_assoc()) {
+    // Fetch yuran data
+    $yuranQuery = "SELECT * FROM bayaran WHERE noKad = ?";
+    $yuranStmt = $conn->prepare($yuranQuery);
+    $yuranStmt->bind_param("s", $student['noKad']);
+    $yuranStmt->execute();
+    $yuranResult = $yuranStmt->get_result();
+
+    $yuranData = [];
+    while ($row = $yuranResult->fetch_assoc()) {
+        $yuranData[] = $row;
     }
 
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $searchValue);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    while ($student = $result->fetch_assoc()) {
-        // Fetch fees based on student's IC number
-        $yuranQuery = "SELECT * FROM bayaran WHERE noKad = ?";
-        $yuranStmt = $conn->prepare($yuranQuery);
-        $yuranStmt->bind_param("s", $student['noKad']);
-        $yuranStmt->execute();
-        $yuranResult = $yuranStmt->get_result();
-
-        $yuranData = [];
-        while ($row = $yuranResult->fetch_assoc()) {
-            $yuranData[] = $row;
-        }
-
-        // Add fee data to the student details
-        $student['bayaran'] = $yuranData;
-        $searchResults[] = $student;
-    }
-
-    if (!empty($searchResults)) {
-        echo json_encode($searchResults);
-    } else {
-        echo json_encode(["error" => "Tiada data dijumpai."]);
-    }
-} else {
-    echo json_encode(["error" => "Sila masukkan data untuk carian."]);
+    $student['bayaran'] = $yuranData;
+    $searchResults[] = $student;
 }
+
+echo json_encode(!empty($searchResults) ? $searchResults : ["error" => "Tiada data dijumpai."]);
 ?>
