@@ -211,12 +211,12 @@ input[type="text"] {
 
     <div class="form-group">
         <label for="alamat">Alamat:</label>
-        <textarea name="alamat" id="alamat" class="uppercase" placeholder="Masukkan Alamat" rows="2" required></textarea>
+        <textarea name="alamat" id="alamat" class="uppercase" placeholder="Masukkan Alamat" rows="2" ></textarea>
     </div>
 
     <div class="form-group">
         <label for="namaWarisPelajar">Nama Waris Pelajar:</label>
-        <input type="text" name="namaWarisPelajar" id="namaWarisPelajar" placeholder="Masukkan Nama Waris Pelajar" required>
+        <input type="text" name="namaWarisPelajar" id="namaWarisPelajar" placeholder="Masukkan Nama Waris Pelajar" >
     </div>
 
     <div class="form-group">
@@ -243,7 +243,7 @@ input[type="text"] {
 
     <div class="form-group">
         <label for="noTel">No. Telefon:</label>
-        <input type="text" name="noTel" id="noTel" placeholder="Masukkan No. Telefon" required>
+        <input type="text" name="noTel" id="noTel" placeholder="Masukkan No. Telefon" >
     </div>
 
     <div class="form-group">
@@ -277,7 +277,7 @@ input[type="text"] {
         
         <img src="../images/logo.jpg" id="sidebar-logo" class="sidebar-logo" alt="Logo">
             <a href="daftar_pelajar.php" class="btn">DAFTAR PELAJAR</a>
-            <a href="kemaskini_pelajar.php" class="btn">KEMASKINI PELAJAR</a>
+            <a href="kemaskini_pelajar.php" class="btn">SENARAI PELAJAR</a>
             <a href="bayaran.php" class="btn">BAYARAN</a>
            
             <a href="../logout/logout.php" class="btn btn-red">LOG KELUAR</a>

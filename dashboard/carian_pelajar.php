@@ -16,14 +16,19 @@ if (!empty($_GET['noKad'])) {
 
 if (!empty($_GET['namaPelajar'])) {
     $query .= " AND namaPelajar = ?";
-$params[] = $_GET['namaPelajar'];
-
+    $params[] = $_GET['namaPelajar'];
     $types .= "s";
 }
 
 if (!empty($_GET['parent_ic'])) {
     $query .= " AND parent_ic = ?";
     $params[] = $_GET['parent_ic'];
+    $types .= "s";
+}
+
+if (!empty($_GET['tingkatan'])) {
+    $query .= " AND tingkatan = ?";
+    $params[] = $_GET['tingkatan'];
     $types .= "s";
 }
 

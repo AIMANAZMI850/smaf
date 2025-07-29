@@ -134,7 +134,7 @@ $row = $result->fetch_assoc();
         <img src="../images/logo.jpg" id="sidebar-logo" class="sidebar-logo" alt="Logo">
         
         <a href="daftar_pelajar.php">DAFTAR PELAJAR</a>
-        <a href="kemaskini_pelajar.php">KEMASKINI PELAJAR</a>
+        <a href="kemaskini_pelajar.php">SENARAI PELAJAR</a>
         <a href="bayaran.php" class="btn">BAYARAN</a>
         <a href="../logout/logout.php" class="btn-red">LOG KELUAR</a>
     </div>
@@ -146,6 +146,7 @@ $row = $result->fetch_assoc();
     <h2>Kemaskini Pelajar</h2>
 
     <form id="editStudentForm" action="update_pelajar.php" method="POST">
+        
         <input type="hidden" name="noKad" value="<?= htmlspecialchars($row['noKad']); ?>">
 
         <label for="noKad">No.Kad Pengenalan <span style="color: red;">*</span></label>
@@ -154,20 +155,21 @@ $row = $result->fetch_assoc();
         <label for="namaPelajar">Nama Pelajar <span style="color: red;">*</span></label>
         <input type="text" id="namaPelajar" name="namaPelajar" value="<?= htmlspecialchars($row['namaPelajar']); ?>" required>
 
-        <label for="alamat">Alamat <span style="color: red;">*</span></label>
-        <input type="text" id="alamat" name="alamat" value="<?= htmlspecialchars($row['alamat']); ?>" required>
+        <label for="alamat">Alamat </label>
+        <input type="text" id="alamat" name="alamat" value="<?= htmlspecialchars($row['alamat']); ?>" >
 
-        <label for="namaWarisPelajar">Nama Waris <span style="color: red;">*</span></label>
-        <input type="text" id="namaWarisPelajar" name="namaWarisPelajar" value="<?= htmlspecialchars($row['namaWarisPelajar']); ?>" required>
+        <label for="namaWarisPelajar">Nama Waris</label>
+        <input type="text" id="namaWarisPelajar" name="namaWarisPelajar" value="<?= htmlspecialchars($row['namaWarisPelajar']); ?>" >
 
         <label for="tingkatan">Tingkatan <span style="color: red;">*</span></label>
         <input type="number" id="tingkatan" name="tingkatan" value="<?= htmlspecialchars($row['tingkatan']); ?>" required oninput="setFee()">
 
         <label for="selectTingkatan">Kelas <span style="color: red;">*</span></label>
         <select name="selectTingkatan" id="selectTingkatan" onchange="setFee()">
-            <option value="abqori" <?= strtolower($row['selectTingkatan']) == 'abqori' ? 'selected' : ''; ?>>Abqori</option>
-            <option value="fatonah" <?= strtolower($row['selectTingkatan']) == 'fatonah' ? 'selected' : ''; ?>>Fatonah</option>
-            <option value="gemilang" <?= strtolower($row['selectTingkatan']) == 'gemilang' ? 'selected' : ''; ?>>Gemilang</option>
+            <option value="ABQORI" <?= $row['selectTingkatan'] == 'abqori' ? 'selected' : ''; ?>>Abqori</option>
+            <option value="FATONAH" <?= $row['selectTingkatan'] == 'fatonah' ? 'selected' : ''; ?>>Fatonah</option>
+            <option value="CEMERLANG" <?= $row['selectTingkatan'] == 'cemerlang' ? 'selected' : ''; ?>>Cemerlang</option>
+            <option value="GEMILANG" <?= $row['selectTingkatan'] == 'gemilang' ? 'selected' : ''; ?>>Gemilang</option>
 
         </select>
 
@@ -177,6 +179,24 @@ $row = $result->fetch_assoc();
             <option value="asrama" <?= strtolower($row['kategori']) == 'asrama' ? 'selected' : ''; ?>>Asrama</option>
 
         </select>
+        <label>Pilih Adik-Beradik Yang Telah Bayar Dana PIBG:</label>
+            <select id="dibayar_oleh_noKad" name="dibayar_oleh_noKad" class="form-control" onchange="setFee()">
+
+
+            <option value="">-- Tiada --</option>
+            <?php
+                $currentNoKad = $row['noKad']; // use $row, not $pelajar
+
+                $stmt2 = $conn->query("SELECT noKad, namaPelajar FROM daftar_pelajar WHERE noKad != '$currentNoKad' ORDER BY namaPelajar");
+
+                while ($sibling = $stmt2->fetch_assoc()) {
+                    $selected = ($row['dibayar_oleh_noKad'] == $sibling['noKad']) ? 'selected' : '';
+                    echo "<option value='{$sibling['noKad']}' $selected>{$sibling['namaPelajar']}</option>";
+                }
+            ?>
+            </select>
+
+
 
         <label for="jumlahYuran">Jumlah Yuran (RM) <span style="color: red;">*</span></label>
         <input type="text" id="jumlahYuran" name="jumlahYuran" value="<?= number_format($row['jumlahYuran'], 2); ?>" required readonly>
@@ -185,13 +205,26 @@ $row = $result->fetch_assoc();
 
     </form>
 </div>
+<?php
+    // Get all siblings who have paid Dana PIBG
+    $siblingsPaidDana = [];
+    $resultDana = $conn->query("SELECT noKad FROM bayaran WHERE jum_bayar_dana_pibg >= 30");
+
+
+    while ($r = $resultDana->fetch_assoc()) {
+        $siblingsPaidDana[] = $r['noKad'];
+    }
+?>
 
 <script>
+     const siblingsPaidDana = <?= json_encode($siblingsPaidDana); ?>;
      
 function setFee() {
     let kategori = document.getElementById("kategori").value;
     let tingkatan = document.getElementById("tingkatan").value;
     let yuranField = document.getElementById("jumlahYuran");
+let siblingSelect = document.getElementById("dibayar_oleh_noKad");
+    let selectedSibling = siblingSelect.value;
 
     let fee = 0;
     let tingkatanNumber = parseInt(tingkatan) || 0;
@@ -201,9 +234,16 @@ function setFee() {
     } else {
         fee = tingkatanNumber >= 3 ? 110.00 : 100.00;
     }
+if (selectedSibling && siblingsPaidDana.includes(String(selectedSibling))) {
+    fee -= 30.00;
+}
+
+
 
     yuranField.value = fee.toFixed(2);
 }
+window.addEventListener("DOMContentLoaded", setFee);
+
 </script>
 
 </body>

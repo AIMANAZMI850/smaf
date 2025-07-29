@@ -41,6 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                       caraBayaran = NULL,
                       payment_time = NULL,
                       status_bayaran = NULL,
+                      dibayar_oleh_noKad = NULL,
                       baki = jumlahYuran 
                       WHERE id = ?";
 

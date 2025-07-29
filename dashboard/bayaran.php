@@ -1,32 +1,64 @@
 <?php
 include '../db_connection/db.php'; // Include your database connection
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$tingkatan = isset($_GET['tingkatan']) ? mysqli_real_escape_string($conn, $_GET['tingkatan']) : '';
+$tingkatanCondition = $tingkatan !== '' ? " AND dp.tingkatan = '$tingkatan'" : '';
+
 
 function getTotalPaidBySiblings($studentId) {
     global $conn;
-    
-    // Get the student's guardian name
-    $query = "SELECT namaWarisPelajar FROM daftar_pelajar WHERE noKad = (SELECT noKad FROM bayaran WHERE id = $studentId)";
-    $result = mysqli_query($conn, $query);
-    if ($result && mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
-        $guardianName = $row['namaWarisPelajar'];
-        
-        // Get the total amount paid by siblings (same guardian)
-        $query = "
-            SELECT SUM(b.jum_bayar_dana_pibg) AS total_paid
-            FROM bayaran b
-            JOIN daftar_pelajar dp ON b.noKad = dp.noKad
-            WHERE dp.namaWarisPelajar = '$guardianName'
-        ";
-        $result = mysqli_query($conn, $query);
-        $row = mysqli_fetch_assoc($result);
-        
-        return floatval($row['total_paid']);
+
+    // Step 1: Get the student's IC (noKad)
+    $queryIC = "SELECT noKad FROM bayaran WHERE id = ?";
+    $stmtIC = mysqli_prepare($conn, $queryIC);
+    mysqli_stmt_bind_param($stmtIC, "i", $studentId);
+    mysqli_stmt_execute($stmtIC);
+    mysqli_stmt_bind_result($stmtIC, $noKad);
+    mysqli_stmt_fetch($stmtIC);
+    mysqli_stmt_close($stmtIC);
+
+    if (!$noKad) return 0;
+
+    // Step 2: Get guardian name
+    $queryWaris = "SELECT namaWarisPelajar FROM daftar_pelajar WHERE noKad = ?";
+    $stmtWaris = mysqli_prepare($conn, $queryWaris);
+    mysqli_stmt_bind_param($stmtWaris, "s", $noKad);
+    mysqli_stmt_execute($stmtWaris);
+    mysqli_stmt_bind_result($stmtWaris, $namaWaris);
+    mysqli_stmt_fetch($stmtWaris);
+    mysqli_stmt_close($stmtWaris);
+
+    if (!$namaWaris) return 0;
+
+    // Step 3: Get all siblings’ noKad with the same guardian
+    $querySiblings = "SELECT noKad FROM daftar_pelajar WHERE namaWarisPelajar = ?";
+    $stmtSiblings = mysqli_prepare($conn, $querySiblings);
+    mysqli_stmt_bind_param($stmtSiblings, "s", $namaWaris);
+    mysqli_stmt_execute($stmtSiblings);
+    $resultSiblings = mysqli_stmt_get_result($stmtSiblings);
+
+    $totalPaid = 0;
+
+    while ($row = mysqli_fetch_assoc($resultSiblings)) {
+        $siblingNoKad = $row['noKad'];
+
+        // Step 4: Get total Dana PIBG paid by each sibling
+        $queryBayar = "SELECT jumlahBayar_dana FROM bayaran WHERE noKad = ?";
+        $stmtBayar = mysqli_prepare($conn, $queryBayar);
+        mysqli_stmt_bind_param($stmtBayar, "s", $siblingNoKad);
+        mysqli_stmt_execute($stmtBayar);
+        mysqli_stmt_bind_result($stmtBayar, $jumlah);
+        while (mysqli_stmt_fetch($stmtBayar)) {
+            $totalPaid += floatval($jumlah);
+        }
+        mysqli_stmt_close($stmtBayar);
     }
-    
-    return 0;
+
+    mysqli_stmt_close($stmtSiblings);
+
+    return $totalPaid;
 }
+
 
 
 
@@ -47,9 +79,13 @@ $total_query = "
     SELECT COUNT(*) 
     FROM bayaran b
     JOIN daftar_pelajar dp ON b.nokad = dp.noKad
-    WHERE dp.namaPelajar LIKE '%$search%' 
-       OR dp.namaWarisPelajar LIKE '%$search%' 
-       OR b.noKad LIKE '%$search%'
+    WHERE (
+    dp.namaPelajar LIKE '%$search%' 
+    OR dp.namaWarisPelajar LIKE '%$search%' 
+    OR b.noKad LIKE '%$search%'
+)
+$tingkatanCondition
+
 ";
 
 
@@ -69,9 +105,13 @@ $query = "
         ) AS total_paid_by_siblings
     FROM bayaran b
     JOIN daftar_pelajar dp ON b.nokad = dp.noKad
-    WHERE dp.namaPelajar LIKE '%$search%' 
-       OR dp.namaWarisPelajar LIKE '%$search%' 
-       OR b.noKad LIKE '%$search%'
+   WHERE (
+    dp.namaPelajar LIKE '%$search%' 
+    OR dp.namaWarisPelajar LIKE '%$search%' 
+    OR b.noKad LIKE '%$search%'
+)
+$tingkatanCondition
+
     LIMIT $start_from, $records_per_page
 ";
 
@@ -245,7 +285,7 @@ $total_pages = ceil($total_rows / $records_per_page);
         <div class="sidebar" id="sidebar">
         <img src="../images/logo.jpg" id="sidebar-logo" class="sidebar-logo" alt="Logo">
         <a href="daftar_pelajar.php" class="btn">DAFTAR PELAJAR</a>
-        <a href="kemaskini_pelajar.php" class="btn">KEMASKINI PELAJAR</a>
+        <a href="kemaskini_pelajar.php" class="btn">SENARAI PELAJAR</a>
         <a href="bayaran.php" class="btn">BAYARAN</a>
       
         <a href="../logout/logout.php" class="btn btn-red">LOG KELUAR</a>
@@ -258,8 +298,19 @@ $total_pages = ceil($total_rows / $records_per_page);
         name="search" 
         placeholder="Masukkan nama waris atau nama pelajar" 
         value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" 
-        style="width:85%; padding:10px; font-size:16px;"
+        style="width:70%; padding:10px; font-size:16px;"
     >
+    <select name="tingkatan" style="padding:10px;">
+    <option value="">Semua Tingkatan</option>
+    <option value="1" <?= (isset($_GET['tingkatan']) && $_GET['tingkatan'] == '1') ? 'selected' : '' ?>>Tingkatan 1</option>
+    <option value="2" <?= (isset($_GET['tingkatan']) && $_GET['tingkatan'] == '2') ? 'selected' : '' ?>>Tingkatan 2</option>
+    <option value="3" <?= (isset($_GET['tingkatan']) && $_GET['tingkatan'] == '3') ? 'selected' : '' ?>>Tingkatan 3</option>
+    <option value="4" <?= (isset($_GET['tingkatan']) && $_GET['tingkatan'] == '4') ? 'selected' : '' ?>>Tingkatan 4</option>
+    <option value="5" <?= (isset($_GET['tingkatan']) && $_GET['tingkatan'] == '5') ? 'selected' : '' ?>>Tingkatan 5</option>
+    <option value="6" <?= (isset($_GET['tingkatan']) && $_GET['tingkatan'] == '6') ? 'selected' : '' ?>>Tingkatan 6</option>
+</select>
+
+    
     <button type="submit" style="padding:10px;">Cari</button>
 </form>
 
@@ -281,6 +332,22 @@ $total_pages = ceil($total_rows / $records_per_page);
                 <?php
                 $bil = $start_from + 1;
                 while ($row = mysqli_fetch_assoc($result)) {
+                   $dana_pibg = $row['dana_pibg'];
+$actualPaid = $row['jum_bayar_dana_pibg'];
+$siblingsPaid = getTotalPaidBySiblings($row['noKad']);
+
+// Determine display-only value (max 30 between own or siblings)
+$displayedPaidDana = max($actualPaid, min($siblingsPaid, 30));
+$displayedBakiDana = ($dana_pibg > $displayedPaidDana) ? $dana_pibg - $displayedPaidDana : 0;
+
+// Compute full total paid (only actual payments by this student)
+$jumlahBayar = $row['jum_bayar_dana_pibg'] + $row['jum_bayar_tuisyen'] + $row['jum_bayar_massak'] + 
+               $row['jum_bayar_majalah'] + $row['jum_bayar_hac'] + $row['jum_bayar_kertas_peperiksaan'] + 
+               $row['jum_bayar_bas'] + $row['jum_bayar_dobi'];
+
+$bakiKeseluruhan = $row['jumlahYuran'] - $jumlahBayar;
+
+
                     echo "<tr>";
                     echo "<td>" . $bil++ . "</td>";
                     echo "<td>" . $row['noKad'] . "</td>";
@@ -306,7 +373,7 @@ $total_pages = ceil($total_rows / $records_per_page);
                                                 <td style='padding: 3px;'><strong>Dana PIBG</strong></td>
                                                 <td><input type='number' value='" . $row['dana_pibg'] . "' class='fee-input' data-type='dana_pibg' data-id='" . $row['id'] . "'></td>
                                                 <td><input type='number' value='" . $row['jum_bayar_dana_pibg'] . "' class='fee-input' data-type='jum_bayar_dana_pibg' data-id='" . $row['id'] . "'></td>
-                                                <td><input type='number' value='" . ($row['dana_pibg'] - $row['jum_bayar_dana_pibg'] - getTotalPaidBySiblings($row['id']) + $row['jum_bayar_dana_pibg']) . "' readonly></td>
+                                                <td><input type='number' value='" . ($row['dana_pibg'] - $row['jum_bayar_dana_pibg'] - getTotalPaidBySiblings($row['noKad']) + $row['jum_bayar_dana_pibg']) . "' readonly></td>
                                             </tr>
 
 
@@ -376,25 +443,26 @@ $total_pages = ceil($total_rows / $records_per_page);
             </tbody>
         </table>
         
+
         <!-- Pagination Links -->
         <div class="pagination">
-           <?php if ($page > 1): ?>
-    <a href="?page=1&search=<?= urlencode($search) ?>">First</a>
-    <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>">Prev</a>
-<?php endif; ?>
+    <?php if ($page > 1): ?>
+        <a href="?page=1&search=<?= urlencode($search) ?>&tingkatan=<?= urlencode($tingkatan) ?>">First</a>
+        <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&tingkatan=<?= urlencode($tingkatan) ?>">Prev</a>
+    <?php endif; ?>
 
-<?php for ($i = 1; $i <= $total_pages; $i++): ?>
-    <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>" class="<?= ($i == $page) ? 'active' : ''; ?>">
-        <?= $i ?>
-    </a>
-<?php endfor; ?>
+    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+        <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>&tingkatan=<?= urlencode($tingkatan) ?>" class="<?= ($i == $page) ? 'active' : '' ?>">
+            <?= $i ?>
+        </a>
+    <?php endfor; ?>
 
-<?php if ($page < $total_pages): ?>
-    <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>">Next</a>
-    <a href="?page=<?= $total_pages ?>&search=<?= urlencode($search) ?>">Last</a>
-<?php endif; ?>
+    <?php if ($page < $total_pages): ?>
+        <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&tingkatan=<?= urlencode($tingkatan) ?>">Next</a>
+        <a href="?page=<?= $total_pages ?>&search=<?= urlencode($search) ?>&tingkatan=<?= urlencode($tingkatan) ?>">Last</a>
+    <?php endif; ?>
+</div>
 
-        </div>
     </div>
 
     </div>
